@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, message: 'Notionに同期しました' });
   } catch (error) {
-    console.error('Notion sync error:', error);
+    console.error('Notion同期エラー:', error);
     return NextResponse.json(
       { error: 'Notionとの同期に失敗しました' },
       { status: 500 }

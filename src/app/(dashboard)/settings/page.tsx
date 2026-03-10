@@ -126,7 +126,7 @@ export default function SettingsPage() {
 
   const handleConnectNotion = async () => {
     if (!notionToken || !notionPageId) {
-      toast.error('Notion Integration TokenとページIDを入力してください');
+      toast.error('Notion 統合トークンとページIDを入力してください');
       return;
     }
     setIsConnecting('notion');

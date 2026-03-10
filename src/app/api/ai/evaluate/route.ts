@@ -7,7 +7,7 @@ export async function POST(req: NextRequest) {
     const { code, prompt, type, level } = await req.json();
 
     if (!code || !prompt) {
-      return NextResponse.json({ error: 'code and prompt are required' }, { status: 400 });
+      return NextResponse.json({ error: 'code と prompt は必須です' }, { status: 400 });
     }
 
     const provider = (req.headers.get('x-ai-provider') || 'anthropic') as AIProvider;
@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ feedback });
   } catch (error) {
-    console.error('AI evaluate error:', error);
+    console.error('AI評価エラー:', error);
     return NextResponse.json(
       {
         feedback: {

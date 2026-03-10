@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx create-next-app@latest . --typescript --tailwind --eslint --app --src-dir --import-alias \"@/*\" --no-git)",
+      "Read(//Users/yucky/Desktop/claude_projects/**)",
+      "Bash(npx create-next-app@latest pyreview_dojo --typescript --tailwind --eslint --app --src-dir --import-alias \"@/*\" --no-git)",
+      "Bash(mkdir -p /Users/yucky/Desktop/claude_projects/pyreview_dojo_tmp)",
+      "Bash(npx create-next-app@latest . --typescript --tailwind --eslint --app --src-dir --import-alias \"@/*\" --no-git --no-react-compiler)"
+    ]
+  }
+}

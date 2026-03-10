@@ -28,7 +28,7 @@ export async function GET(
       },
     });
   } catch (error) {
-    console.error('Certificate download error:', error);
+    console.error('証明書ダウンロードエラー:', error);
     return NextResponse.json({ error: 'ダウンロードに失敗しました' }, { status: 500 });
   }
 }

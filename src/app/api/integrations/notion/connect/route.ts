@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
       message: 'Notionと連携しました',
     });
   } catch (error) {
-    console.error('Notion connect error:', error);
+    console.error('Notion連携エラー:', error);
     return NextResponse.json({ error: '連携に失敗しました' }, { status: 500 });
   }
 }

@@ -26,8 +26,8 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (error) {
-      console.error('Progress upsert error:', error);
-      return NextResponse.json({ success: true, message: 'Demo mode' });
+      console.error('進捗更新エラー:', error);
+      return NextResponse.json({ success: true, message: 'デモモード' });
     }
 
     // アクティビティログを記録
@@ -43,8 +43,8 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, data });
   } catch (error) {
-    console.error('Progress error:', error);
-    return NextResponse.json({ success: true, message: 'Fallback mode' });
+    console.error('進捗取得エラー:', error);
+    return NextResponse.json({ success: true, message: 'フォールバックモード' });
   }
 }
 

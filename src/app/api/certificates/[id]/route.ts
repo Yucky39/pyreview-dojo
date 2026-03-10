@@ -20,6 +20,6 @@ export async function GET(
 
     return NextResponse.json({ certificate: cert });
   } catch (error) {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ error: 'サーバー内部エラー' }, { status: 500 });
   }
 }

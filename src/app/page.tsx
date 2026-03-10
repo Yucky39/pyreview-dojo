@@ -223,7 +223,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* CTA */}
+      {/* 行動喚起セクション */}
       <section className="py-20 px-4 bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600">
         <div className="max-w-2xl mx-auto text-center text-white">
           <div className="text-5xl mb-6">🥋</div>

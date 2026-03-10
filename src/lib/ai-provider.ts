@@ -230,7 +230,7 @@ export async function generateLearningPlan(
 
   const text = await generateText(config, prompt, undefined, 4000);
   const jsonMatch = text.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) throw new Error('Failed to parse learning plan JSON');
+  if (!jsonMatch) throw new Error('学習プランのJSON解析に失敗しました');
   return JSON.parse(jsonMatch[0]);
 }
 
@@ -280,7 +280,7 @@ ${code}
   try {
     const text = await generateText(config, prompt, undefined, 2000);
     const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) throw new Error('JSON parse failed');
+    if (!jsonMatch) throw new Error('JSONの解析に失敗しました');
     return JSON.parse(jsonMatch[0]);
   } catch {
     return {
@@ -358,6 +358,6 @@ export async function generateLessonContent(
 
   const text = await generateText(config, prompt, undefined, 3000);
   const jsonMatch = text.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) throw new Error('Failed to parse lesson content JSON');
+  if (!jsonMatch) throw new Error('レッスンコンテンツのJSON解析に失敗しました');
   return JSON.parse(jsonMatch[0]);
 }

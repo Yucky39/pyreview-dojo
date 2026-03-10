@@ -33,7 +33,7 @@ export async function GET(
       },
     });
   } catch (error) {
-    console.error('Verify error:', error);
+    console.error('証明書検証エラー:', error);
     return NextResponse.json(
       { valid: false, error: '検証中にエラーが発生しました' },
       { status: 500 }

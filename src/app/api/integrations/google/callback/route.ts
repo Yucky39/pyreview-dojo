@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
     const accessToken = tokens.access_token;
 
     if (!accessToken) {
-      throw new Error('No access token received');
+      throw new Error('アクセストークンが取得できませんでした');
     }
 
     // デモ用: セッションからユーザーIDを取得
@@ -62,7 +62,7 @@ export async function GET(req: NextRequest) {
       `${process.env.NEXT_PUBLIC_APP_URL}/settings?success=google_connected`
     );
   } catch (err) {
-    console.error('Google callback error:', err);
+    console.error('Googleコールバックエラー:', err);
     return NextResponse.redirect(
       `${process.env.NEXT_PUBLIC_APP_URL}/settings?error=google_sync_failed`
     );

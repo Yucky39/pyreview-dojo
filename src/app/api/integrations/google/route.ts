@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, message: 'Google Calendarに同期しました' });
   } catch (error) {
-    console.error('Google sync error:', error);
+    console.error('Google同期エラー:', error);
     return NextResponse.json({ error: '同期に失敗しました' }, { status: 500 });
   }
 }

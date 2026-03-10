@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ message: response });
   } catch (error) {
-    console.error('AI chat error:', error);
+    console.error('AIチャットエラー:', error);
     return NextResponse.json(
       { message: 'AIアシスタントが一時的に利用できません。後でもう一度お試しください。' },
       { status: 200 }

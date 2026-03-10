@@ -9,7 +9,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 export function createServerSupabaseClient() {
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!serviceKey) {
-    throw new Error('SUPABASE_SERVICE_ROLE_KEY is not set');
+    throw new Error('SUPABASE_SERVICE_ROLE_KEY が設定されていません');
   }
   return createClient(supabaseUrl, serviceKey, {
     auth: {

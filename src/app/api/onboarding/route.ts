@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (planError) {
-      console.error('Plan insert error:', planError);
+      console.error('学習プラン登録エラー:', planError);
     }
 
     if (plan) {
@@ -119,7 +119,7 @@ export async function POST(req: NextRequest) {
       message: '学習プランを作成しました',
     });
   } catch (error) {
-    console.error('Onboarding error:', error);
+    console.error('オンボーディングエラー:', error);
     return NextResponse.json({
       level: 1 as SkillLevel,
       plan: null,
