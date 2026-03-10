@@ -1,8 +1,10 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f8f7ff;
+  --foreground: #1a1a2e;
+  --primary: #6366f1;
+  --primary-dark: #4338ca;
 }
 
 @theme inline {
@@ -12,15 +14,44 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', Meiryo, sans-serif;
 }
+
+/* スクロールバー */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 3px; }
+::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
+
+/* コードフォント */
+pre, code { font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace; }
+
+/* アニメーション */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-16px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes bounceIn {
+  0% { opacity: 0; transform: scale(0.8); }
+  70% { transform: scale(1.05); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+.animate-fade-in { animation: fadeIn 0.3s ease-out; }
+.animate-slide-in { animation: slideIn 0.3s ease-out; }
+.animate-bounce-in { animation: bounceIn 0.4s ease-out; }
+
+/* レベルグラデーション */
+.level-badge-0 { background: linear-gradient(135deg, #4CAF50, #2E7D32); }
+.level-badge-1 { background: linear-gradient(135deg, #2196F3, #1565C0); }
+.level-badge-2 { background: linear-gradient(135deg, #FFC107, #E65100); }
+.level-badge-3 { background: linear-gradient(135deg, #FF5722, #B71C1C); }
+.level-badge-4 { background: linear-gradient(135deg, #9C27B0, #4A148C); }
+.level-badge-5 { background: linear-gradient(135deg, #E91E63, #880E4F); }
