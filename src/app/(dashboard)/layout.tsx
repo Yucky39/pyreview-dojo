@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { clsx } from 'clsx';
 import {
   LayoutDashboard,
@@ -15,7 +15,9 @@ import {
   X,
   ChevronRight,
   Zap,
+  LogOut,
 } from 'lucide-react';
+import { useAuth } from '@/components/auth/AuthProvider';
 
 const navItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'ダッシュボード' },
@@ -29,6 +31,17 @@ const navItems = [
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const pathname = usePathname();
+  const router = useRouter();
+  const { profile, signOut } = useAuth();
+
+  const displayName = profile?.name || 'ユーザー';
+  const initials = displayName.charAt(0).toUpperCase();
+  const levelLabel = profile ? `Level ${profile.current_level}` : '';
+
+  const handleSignOut = async () => {
+    // サーバー側でセッション破棄→クライアント側クリア
+    window.location.href = '/auth/logout';
+  };
 
   return (
     <div className="flex h-screen bg-gray-50 overflow-hidden">
@@ -99,14 +112,31 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* ユーザーエリア */}
         <div className="p-3 border-t border-gray-100">
           <div className="flex items-center gap-3 px-2 py-2">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center flex-shrink-0 text-white text-sm font-bold">
-              U
-            </div>
-            {sidebarOpen && (
-              <div className="overflow-hidden">
-                <div className="text-sm font-semibold text-gray-700 truncate">ユーザー</div>
-                <div className="text-xs text-gray-400">Level 1 · 他言語経験者</div>
+            {profile?.avatar_url ? (
+              <img
+                src={profile.avatar_url}
+                alt={displayName}
+                className="w-8 h-8 rounded-full flex-shrink-0 object-cover"
+              />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center flex-shrink-0 text-white text-sm font-bold">
+                {initials}
               </div>
+            )}
+            {sidebarOpen && (
+              <>
+                <div className="overflow-hidden flex-1">
+                  <div className="text-sm font-semibold text-gray-700 truncate">{displayName}</div>
+                  <div className="text-xs text-gray-400">{levelLabel}</div>
+                </div>
+                <button
+                  onClick={handleSignOut}
+                  className="text-gray-400 hover:text-red-500 p-1 rounded-lg hover:bg-red-50 transition-colors"
+                  title="ログアウト"
+                >
+                  <LogOut size={16} />
+                </button>
+              </>
             )}
           </div>
         </div>

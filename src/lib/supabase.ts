@@ -1,11 +1,22 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { createBrowserClient } from '@supabase/ssr';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key';
 
+// ブラウザ用クライアント（シングルトン）
+let browserClient: SupabaseClient | null = null;
+
+export function getSupabaseBrowserClient(): SupabaseClient {
+  if (browserClient) return browserClient;
+  browserClient = createBrowserClient(supabaseUrl, supabaseAnonKey);
+  return browserClient;
+}
+
+// 後方互換用エクスポート
 export const supabase: SupabaseClient = createClient(supabaseUrl, supabaseAnonKey);
 
-// サーバーサイド用 (サービスロールキー使用)
+// サーバーサイド用（サービスロールキー使用）
 export function createServerSupabaseClient() {
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!serviceKey) {

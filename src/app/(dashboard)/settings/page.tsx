@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import {
   Link2,
   CheckCircle2,
@@ -14,11 +14,15 @@ import {
   EyeOff,
   Info,
   Zap,
+  User,
+  Camera,
+  Save,
 } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import toast from 'react-hot-toast';
 import { clsx } from 'clsx';
 import { useAppStore } from '@/store/useAppStore';
+import { useAuth } from '@/components/auth/AuthProvider';
 import { AIProvider, AI_PROVIDER_LABELS, AI_PROVIDER_MODELS } from '@/lib/ai-provider';
 
 type IntegrationStatus = {
@@ -66,6 +70,85 @@ const AI_PROVIDERS: Array<{
 
 export default function SettingsPage() {
   const { aiProvider, aiApiKey, setAIProvider, setAIApiKey } = useAppStore();
+  const { profile, supabaseUser, refreshProfile } = useAuth();
+
+  // プロフィール編集
+  const [editName, setEditName] = useState(profile?.name || '');
+  const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+
+  const handleUpdateProfile = async () => {
+    if (!editName.trim()) {
+      toast.error('名前を入力してください');
+      return;
+    }
+    setIsUpdatingProfile(true);
+    try {
+      const res = await fetch('/api/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: editName.trim() }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error);
+      }
+      await refreshProfile();
+      toast.success('プロフィールを更新しました');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'プロフィールの更新に失敗しました');
+    } finally {
+      setIsUpdatingProfile(false);
+    }
+  };
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingAvatar(true);
+    try {
+      const formData = new FormData();
+      formData.append('avatar', file);
+
+      const res = await fetch('/api/profile/avatar', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error);
+      }
+
+      await refreshProfile();
+      toast.success('アバターを更新しました');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'アバターのアップロードに失敗しました');
+    } finally {
+      setIsUploadingAvatar(false);
+      if (avatarInputRef.current) avatarInputRef.current.value = '';
+    }
+  };
+
+  const handleAvatarUrlUpdate = async (url: string) => {
+    setIsUploadingAvatar(true);
+    try {
+      const res = await fetch('/api/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ avatar_url: url }),
+      });
+      if (!res.ok) throw new Error();
+      await refreshProfile();
+      toast.success('アバターを更新しました');
+    } catch {
+      toast.error('アバターの更新に失敗しました');
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  };
 
   const [integrations, setIntegrations] = useState<IntegrationStatus>({
     notion: false,
@@ -172,6 +255,130 @@ export default function SettingsPage() {
         <p className="text-gray-500 mt-1">
           学習管理をより便利にするための連携設定です
         </p>
+      </div>
+
+      {/* プロフィール設定 */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="p-5 border-b border-gray-100">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-indigo-400 to-purple-500 rounded-xl flex items-center justify-center">
+              <User size={20} className="text-white" />
+            </div>
+            <div>
+              <h2 className="font-bold text-gray-800">プロフィール</h2>
+              <p className="text-sm text-gray-500">
+                名前やアバター画像を変更できます
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-5 space-y-5">
+          {/* アバター */}
+          <div className="flex items-center gap-5">
+            <div className="relative group">
+              {profile?.avatar_url ? (
+                <img
+                  src={profile.avatar_url}
+                  alt={profile.name}
+                  className="w-20 h-20 rounded-2xl object-cover border-2 border-gray-100"
+                />
+              ) : (
+                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white text-2xl font-bold border-2 border-gray-100">
+                  {(profile?.name || supabaseUser?.email || 'U').charAt(0).toUpperCase()}
+                </div>
+              )}
+              <button
+                onClick={() => avatarInputRef.current?.click()}
+                disabled={isUploadingAvatar}
+                className="absolute inset-0 bg-black/40 rounded-2xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+              >
+                {isUploadingAvatar ? (
+                  <svg className="animate-spin h-6 w-6 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                ) : (
+                  <Camera size={20} className="text-white" />
+                )}
+              </button>
+              <input
+                ref={avatarInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                onChange={handleAvatarUpload}
+                className="hidden"
+              />
+            </div>
+
+            <div className="flex-1 space-y-1">
+              <p className="text-sm font-semibold text-gray-700">アバター画像</p>
+              <p className="text-xs text-gray-400">
+                クリックして画像を変更（JPEG, PNG, WebP, GIF / 2MB以内）
+              </p>
+              {profile?.avatar_url && (
+                <button
+                  onClick={() => handleAvatarUrlUpdate('')}
+                  className="text-xs text-red-500 hover:text-red-600 font-medium"
+                >
+                  アバターを削除
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* 名前 */}
+          <div>
+            <label className="text-sm font-semibold text-gray-700 block mb-1.5">
+              表示名
+            </label>
+            <input
+              type="text"
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+              placeholder="あなたの名前"
+              maxLength={100}
+              className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+          </div>
+
+          {/* メールアドレス（読み取り専用） */}
+          <div>
+            <label className="text-sm font-semibold text-gray-700 block mb-1.5">
+              メールアドレス
+            </label>
+            <input
+              type="email"
+              value={supabaseUser?.email || ''}
+              disabled
+              className="w-full px-4 py-2.5 border border-gray-100 rounded-xl text-sm bg-gray-50 text-gray-500 cursor-not-allowed"
+            />
+            <p className="text-xs text-gray-400 mt-1">
+              メールアドレスの変更はサポートに連絡してください
+            </p>
+          </div>
+
+          {/* ログイン方法の表示 */}
+          {supabaseUser?.app_metadata?.provider && supabaseUser.app_metadata.provider !== 'email' && (
+            <div className="bg-gray-50 rounded-xl p-3 flex items-center gap-2 text-sm text-gray-600">
+              <Info size={14} className="text-gray-400" />
+              <span>
+                {supabaseUser.app_metadata.provider === 'google' ? 'Google' :
+                 supabaseUser.app_metadata.provider === 'twitter' ? 'X (Twitter)' :
+                 supabaseUser.app_metadata.provider} アカウントでログイン中
+              </span>
+            </div>
+          )}
+
+          <Button
+            onClick={handleUpdateProfile}
+            loading={isUpdatingProfile}
+            fullWidth
+          >
+            <Save size={16} />
+            プロフィールを保存
+          </Button>
+        </div>
       </div>
 
       {/* AI プロバイダー設定 */}

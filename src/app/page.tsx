@@ -11,6 +11,7 @@ import {
   Users,
   TrendingUp,
 } from 'lucide-react';
+import AuthNavButtons from '@/components/auth/AuthNavButtons';
 
 const SKILL_LEVELS = [
   { level: 0, label: '完全初学者', emoji: '🌱', color: 'bg-green-100 text-green-700' },
@@ -66,20 +67,7 @@ export default function LandingPage() {
             </div>
             <span className="font-black text-gray-800 text-lg">PyReview Dojo</span>
           </div>
-          <div className="flex items-center gap-4">
-            <Link
-              href="/dashboard"
-              className="text-sm text-gray-600 hover:text-gray-800 font-medium"
-            >
-              ダッシュボード
-            </Link>
-            <Link
-              href="/onboarding"
-              className="bg-indigo-600 text-white px-5 py-2 rounded-xl text-sm font-bold hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-200"
-            >
-              無料で始める
-            </Link>
-          </div>
+          <AuthNavButtons />
         </div>
       </nav>
 
