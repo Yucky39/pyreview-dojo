@@ -52,9 +52,12 @@ export async function GET() {
 
     const completedLessons = progress?.filter((p) => p.status === 'completed').length ?? 0;
     const totalLessons = 22; // 全レッスン数（固定値）
-    const milestones = plan?.learning_phases?.flatMap((ph: { milestones: unknown[] }) => ph.milestones) ?? [];
-    const completedMilestones = milestones.filter((m: { status: string }) => m.status === 'completed').length;
-    const nextMilestone = milestones.find((m: { status: string }) => m.status !== 'completed') ?? null;
+    type Milestone = { id: string; title: string; description: string; due_date: string; status: string };
+    const milestones: Milestone[] = plan?.learning_phases?.flatMap(
+      (ph: { milestones: Milestone[] }) => ph.milestones
+    ) ?? [];
+    const completedMilestones = milestones.filter((m) => m.status === 'completed').length;
+    const nextMilestone = milestones.find((m) => m.status !== 'completed') ?? null;
 
     const stats = {
       current_level: profile?.current_level ?? 0,
