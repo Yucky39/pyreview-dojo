@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import {
   Link2,
@@ -69,7 +69,15 @@ const AI_PROVIDERS: Array<{
   },
 ];
 
-export default function SettingsPage() {
+export default function SettingsPageWrapper() {
+  return (
+    <Suspense>
+      <SettingsPage />
+    </Suspense>
+  );
+}
+
+function SettingsPage() {
   const { aiProvider, aiApiKey, setAIProvider, setAIApiKey } = useAppStore();
   const { profile, supabaseUser, refreshProfile } = useAuth();
   const searchParams = useSearchParams();
