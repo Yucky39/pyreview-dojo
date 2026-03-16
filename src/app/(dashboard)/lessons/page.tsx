@@ -10,22 +10,9 @@ import {
   Lock,
   ChevronRight,
   Search,
-  Filter,
 } from 'lucide-react';
 import { clsx } from 'clsx';
-
-const LESSONS = [
-  { id: 'l-1', title: 'Python環境構築とHello World', phase: 1, type: 'theory', status: 'completed', estimated_minutes: 30, difficulty: 1, tags: ['環境構築', '基礎'] },
-  { id: 'l-2', title: '変数・データ型・演算子', phase: 1, type: 'theory', status: 'completed', estimated_minutes: 45, difficulty: 1, tags: ['変数', 'データ型'] },
-  { id: 'l-3', title: '制御フロー（if, for, while）', phase: 1, type: 'theory', status: 'completed', estimated_minutes: 45, difficulty: 1, tags: ['制御構造', 'ループ'] },
-  { id: 'l-4', title: '関数とスコープ', phase: 1, type: 'theory', status: 'completed', estimated_minutes: 60, difficulty: 2, tags: ['関数', 'スコープ'] },
-  { id: 'l-5', title: 'リスト、タプル、辞書、セット', phase: 1, type: 'exercise', status: 'completed', estimated_minutes: 60, difficulty: 2, tags: ['コレクション', 'データ構造'] },
-  { id: 'l-6', title: 'クラスとオブジェクト指向', phase: 1, type: 'theory', status: 'available', estimated_minutes: 75, difficulty: 3, tags: ['OOP', 'クラス'] },
-  { id: 'l-7', title: 'エラーハンドリングと例外', phase: 1, type: 'theory', status: 'locked', estimated_minutes: 45, difficulty: 2, tags: ['例外処理'] },
-  { id: 'l-8', title: 'リスト内包表記とジェネレータ', phase: 1, type: 'exercise', status: 'locked', estimated_minutes: 60, difficulty: 3, tags: ['内包表記', 'Pythonic'] },
-  { id: 'l-9', title: 'ファイル操作とパス処理', phase: 2, type: 'theory', status: 'locked', estimated_minutes: 45, difficulty: 2, tags: ['ファイル', 'pathlib'] },
-  { id: 'l-10', title: '正規表現', phase: 2, type: 'exercise', status: 'locked', estimated_minutes: 60, difficulty: 3, tags: ['正規表現', 're'] },
-];
+import { LESSONS } from '@/lib/lessons-data';
 
 const typeLabels = {
   theory: { label: '理論', color: 'bg-blue-100 text-blue-700' },
