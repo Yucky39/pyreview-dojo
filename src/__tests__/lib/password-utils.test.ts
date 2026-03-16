@@ -56,8 +56,8 @@ describe('パスワードバリデーション', () => {
   });
 
   it('パスワード不一致のエラー判定', () => {
-    const password = 'Password1';
-    const confirm = 'Password2';
+    const password = 'Password1' as string;
+    const confirm = 'Password2' as string;
     expect(password === confirm).toBe(false);
   });
 
