@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { syncMilestonesToNotion, createPlanOverviewPage, updateMilestoneInNotion } from '@/lib/notion';
 import { supabase } from '@/lib/supabase';
+import { getCurrentUser } from '@/lib/supabase-server';
 
 export async function POST(req: NextRequest) {
   try {
-    const authHeader = req.headers.get('Authorization');
-    const userId = authHeader?.replace('Bearer ', '') || 'demo-user';
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
+    }
+    const userId = user.id;
 
     // ユーザーのNotion設定を取得
     const { data: profile } = await supabase

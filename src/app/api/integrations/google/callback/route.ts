@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { google } from 'googleapis';
 import { supabase } from '@/lib/supabase';
 import { syncPlanToGoogleCalendar } from '@/lib/google';
+import { getCurrentUser } from '@/lib/supabase-server';
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -29,8 +30,14 @@ export async function GET(req: NextRequest) {
       throw new Error('アクセストークンが取得できませんでした');
     }
 
-    // デモ用: セッションからユーザーIDを取得
-    const userId = 'demo-user';
+    // セッションからユーザーIDを取得
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.redirect(
+        `${process.env.NEXT_PUBLIC_APP_URL}/settings?error=google_auth_failed`
+      );
+    }
+    const userId = user.id;
 
     // プロフィールを更新
     await supabase

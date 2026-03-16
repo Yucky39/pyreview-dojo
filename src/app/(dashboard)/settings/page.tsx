@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import {
   Link2,
   CheckCircle2,
@@ -71,6 +72,7 @@ const AI_PROVIDERS: Array<{
 export default function SettingsPage() {
   const { aiProvider, aiApiKey, setAIProvider, setAIApiKey } = useAppStore();
   const { profile, supabaseUser, refreshProfile } = useAuth();
+  const searchParams = useSearchParams();
 
   // プロフィール編集
   const [editName, setEditName] = useState(profile?.name || '');
@@ -154,6 +156,36 @@ export default function SettingsPage() {
     notion: false,
     google: false,
   });
+
+  // 連携ステータスをプロフィールAPIから取得
+  useEffect(() => {
+    fetch('/api/profile')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data) {
+          setIntegrations({
+            notion: !!data.notion_token,
+            google: !!data.google_token,
+          });
+        }
+      })
+      .catch(() => {/* 取得失敗時は未連携のまま */});
+  }, []);
+
+  // クエリパラメータによる通知
+  useEffect(() => {
+    const success = searchParams.get('success');
+    const error = searchParams.get('error');
+    if (success === 'google_connected') {
+      setIntegrations((prev) => ({ ...prev, google: true }));
+      toast.success('Google Calendarと連携しました！');
+    } else if (error === 'google_auth_failed') {
+      toast.error('Google認証に失敗しました');
+    } else if (error === 'google_sync_failed') {
+      toast.error('Googleカレンダーとの同期に失敗しました');
+    }
+  }, [searchParams]);
+
   const [notionToken, setNotionToken] = useState('');
   const [notionPageId, setNotionPageId] = useState('');
   const [isConnecting, setIsConnecting] = useState<string | null>(null);
@@ -243,9 +275,19 @@ export default function SettingsPage() {
     }
   };
 
-  const handleDisconnect = (platform: keyof IntegrationStatus) => {
-    setIntegrations((prev) => ({ ...prev, [platform]: false }));
-    toast.success(`${platform === 'notion' ? 'Notion' : 'Google Calendar'}との連携を解除しました`);
+  const handleDisconnect = async (platform: keyof IntegrationStatus) => {
+    try {
+      const res = await fetch('/api/integrations/disconnect', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ platform }),
+      });
+      if (!res.ok) throw new Error();
+      setIntegrations((prev) => ({ ...prev, [platform]: false }));
+      toast.success(`${platform === 'notion' ? 'Notion' : 'Google Calendar'}との連携を解除しました`);
+    } catch {
+      toast.error('連携解除に失敗しました');
+    }
   };
 
   return (

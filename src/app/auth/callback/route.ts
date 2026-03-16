@@ -29,6 +29,12 @@ export async function GET(request: NextRequest) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
+      // パスワードリセットなど next が明示的に指定されている場合はそちらを優先
+      const hasExplicitNext = searchParams.has('next');
+      if (hasExplicitNext && next !== '/onboarding') {
+        return supabaseResponse;
+      }
+
       // セッション確立成功 → プロフィールの有無をチェック
       const { data: { user } } = await supabase.auth.getUser();
 

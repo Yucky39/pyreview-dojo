@@ -87,6 +87,12 @@ export default function DashboardPage() {
     if (hour < 12) setGreeting('おはようございます');
     else if (hour < 18) setGreeting('こんにちは');
     else setGreeting('こんばんは');
+
+    // 実データ取得
+    fetch('/api/dashboard')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => { if (data) setStats(data); })
+      .catch(() => {/* デモデータを維持 */});
   }, []);
 
   return (

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createNotionClient, createNotionLearningDatabase, createPlanOverviewPage } from '@/lib/notion';
 import { supabase } from '@/lib/supabase';
+import { getCurrentUser } from '@/lib/supabase-server';
 
 export async function POST(req: NextRequest) {
   try {
@@ -18,8 +19,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Notionの認証に失敗しました。トークンとページIDを確認してください' }, { status: 401 });
     }
 
-    const authHeader = req.headers.get('Authorization');
-    const userId = authHeader?.replace('Bearer ', '') || 'demo-user';
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
+    }
+    const userId = user.id;
 
     // ユーザーの学習プランを取得
     const { data: plan } = await supabase

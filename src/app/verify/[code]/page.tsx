@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { CheckCircle2, XCircle, Award, Calendar, ShieldCheck } from 'lucide-react';
+import { CheckCircle2, XCircle, Award, ShieldCheck, ArrowLeft } from 'lucide-react';
+import Link from 'next/link';
 import { SkillLevel, SKILL_LEVEL_LABELS, SKILL_LEVEL_DESCRIPTIONS } from '@/types';
 import LevelBadge from '@/components/ui/LevelBadge';
 
@@ -49,15 +50,21 @@ export default function VerifyPage() {
   useEffect(() => {
     const verify = async () => {
       try {
-        const res = await fetch(`/api/verify/${code}`);
+        const res = await fetch(`/api/verify/${encodeURIComponent(code)}`);
         const data = await res.json();
-        setResult(data);
+
+        // DB未接続時のフォールバック（デモコードのみ）
+        if (!res.ok && code === 'PRD-ABCD-EFGH-IJKL') {
+          setResult(DEMO_RESULT);
+        } else {
+          setResult(data);
+        }
       } catch {
-        // デモ用: コードが一致する場合はデモデータを返す
+        // ネットワークエラー時のフォールバック
         if (code === 'PRD-ABCD-EFGH-IJKL') {
           setResult(DEMO_RESULT);
         } else {
-          setResult({ valid: false, error: '認証コードが無効です' });
+          setResult({ valid: false, error: 'ネットワークエラーが発生しました。接続を確認してください。' });
         }
       } finally {
         setLoading(false);
@@ -162,6 +169,15 @@ export default function VerifyPage() {
               <br />
               認証コードで真正性を確認できます。
             </p>
+            <div className="text-center">
+              <Link
+                href="/verify"
+                className="inline-flex items-center gap-1.5 text-sm text-indigo-600 hover:text-indigo-700 font-medium"
+              >
+                <ArrowLeft size={14} />
+                別のコードを確認する
+              </Link>
+            </div>
           </div>
         ) : (
           <div className="bg-white rounded-3xl shadow-xl p-8 text-center">
@@ -172,9 +188,16 @@ export default function VerifyPage() {
             <p className="text-gray-500 text-sm mb-4">
               {result?.error || '認証コードが見つかりませんでした。コードを確認してください。'}
             </p>
-            <p className="text-xs text-gray-400 font-mono bg-gray-50 rounded-lg px-3 py-2">
+            <p className="text-xs text-gray-400 font-mono bg-gray-50 rounded-lg px-3 py-2 mb-4">
               確認コード: {code}
             </p>
+            <Link
+              href="/verify"
+              className="inline-flex items-center gap-1.5 text-sm text-indigo-600 hover:text-indigo-700 font-medium"
+            >
+              <ArrowLeft size={14} />
+              別のコードを確認する
+            </Link>
           </div>
         )}
       </div>

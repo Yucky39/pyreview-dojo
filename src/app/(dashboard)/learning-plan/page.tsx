@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   ChevronDown,
   ChevronRight,
@@ -160,9 +160,17 @@ const DEMO_PLAN = {
 };
 
 export default function LearningPlanPage() {
+  const [plan, setPlan] = useState(DEMO_PLAN);
   const [expandedPhases, setExpandedPhases] = useState<Set<string>>(new Set(['ph-1']));
   const [isSyncingNotion, setIsSyncingNotion] = useState(false);
   const [isSyncingGoogle, setIsSyncingGoogle] = useState(false);
+
+  useEffect(() => {
+    fetch('/api/learning-plan')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => { if (data) setPlan(data); })
+      .catch(() => {/* デモデータを維持 */});
+  }, []);
 
   const togglePhase = (phaseId: string) => {
     setExpandedPhases((prev) => {
@@ -199,8 +207,8 @@ export default function LearningPlanPage() {
     }
   };
 
-  const totalLessons = DEMO_PLAN.phases.reduce((acc, p) => acc + p.lessons.length, 0);
-  const completedLessons = DEMO_PLAN.phases.reduce(
+  const totalLessons = plan.phases.reduce((acc, p) => acc + p.lessons.length, 0);
+  const completedLessons = plan.phases.reduce(
     (acc, p) => acc + p.lessons.filter((l) => l.status === 'completed').length,
     0
   );
@@ -210,26 +218,26 @@ export default function LearningPlanPage() {
       {/* ヘッダー */}
       <div>
         <h1 className="text-2xl font-black text-gray-800">学習プラン</h1>
-        <p className="text-gray-500 mt-1">{DEMO_PLAN.description}</p>
+        <p className="text-gray-500 mt-1">{plan.description}</p>
       </div>
 
       {/* プラン概要 */}
       <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="space-y-3">
-            <h2 className="font-bold text-gray-800 text-lg">{DEMO_PLAN.title}</h2>
+            <h2 className="font-bold text-gray-800 text-lg">{plan.title}</h2>
             <div className="flex flex-wrap gap-4 text-sm text-gray-600">
               <div className="flex items-center gap-1.5">
                 <Calendar size={16} className="text-indigo-500" />
                 <span>
-                  {new Date(DEMO_PLAN.start_date).toLocaleDateString('ja-JP', { month: 'long', day: 'numeric' })}
+                  {new Date(plan.start_date).toLocaleDateString('ja-JP', { month: 'long', day: 'numeric' })}
                   {' 〜 '}
-                  {new Date(DEMO_PLAN.end_date).toLocaleDateString('ja-JP', { month: 'long', day: 'numeric' })}
+                  {new Date(plan.end_date).toLocaleDateString('ja-JP', { month: 'long', day: 'numeric' })}
                 </span>
               </div>
               <div className="flex items-center gap-1.5">
                 <Clock size={16} className="text-indigo-500" />
-                <span>{DEMO_PLAN.total_weeks}週間</span>
+                <span>{plan.total_weeks}週間</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <Trophy size={16} className="text-indigo-500" />
@@ -278,7 +286,7 @@ export default function LearningPlanPage() {
 
       {/* フェーズ一覧 */}
       <div className="space-y-3">
-        {DEMO_PLAN.phases.map((phase) => {
+        {plan.phases.map((phase) => {
           const isExpanded = expandedPhases.has(phase.id);
           const phaseLessons = phase.lessons;
           const completedPhaseLessons = phaseLessons.filter((l) => l.status === 'completed').length;
