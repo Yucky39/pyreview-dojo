@@ -2,7 +2,7 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
 // 認証不要のパス
-const publicPaths = ['/', '/auth/login', '/auth/register', '/auth/callback', '/auth/confirm', '/auth/logout', '/verify'];
+const publicPaths = ['/', '/auth/login', '/auth/register', '/auth/callback', '/auth/confirm', '/auth/logout', '/auth/reset-password', '/auth/update-password', '/verify'];
 
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
