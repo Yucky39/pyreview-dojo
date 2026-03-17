@@ -1,0 +1,200 @@
+/* @theme pyreview-material */
+/* @auto-scaling true */
+/* @size 16:9 1280px 720px */
+/* Material Design inspired theme for PyReview Dojo */
+
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Roboto:wght@400;500;700&display=swap');
+
+:root {
+  --md-primary: #1976D2;
+  --md-primary-dark: #1565C0;
+  --md-primary-light: #42A5F5;
+  --md-accent: #00BCD4;
+  --md-accent-dark: #0097A7;
+  --md-surface: #FFFFFF;
+  --md-background: #FAFAFA;
+  --md-on-primary: #FFFFFF;
+  --md-on-surface: #212121;
+  --md-on-surface-secondary: #757575;
+  --md-divider: #E0E0E0;
+  --md-elevation-1: 0 2px 4px rgba(0,0,0,0.1);
+  --md-elevation-2: 0 4px 8px rgba(0,0,0,0.12);
+  --md-radius: 8px;
+}
+
+section {
+  font-family: 'Noto Sans JP', 'Roboto', sans-serif !important;
+  background: var(--md-background) !important;
+  color: var(--md-on-surface) !important;
+  font-size: 28px !important;
+  line-height: 1.6 !important;
+  padding: 56px 72px !important;
+  letter-spacing: 0.02em;
+}
+
+section.title {
+  background: linear-gradient(135deg, var(--md-primary) 0%, var(--md-primary-dark) 100%) !important;
+  color: var(--md-on-primary) !important;
+  justify-content: center !important;
+  text-align: center !important;
+}
+
+section.title h1,
+section.title h2,
+section.title p {
+  text-align: center !important;
+  color: var(--md-on-primary) !important;
+}
+
+section.title h1 {
+  font-size: 2.4em !important;
+  font-weight: 700 !important;
+  margin-bottom: 16px !important;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  border: none !important;
+}
+
+section.title h2 {
+  font-size: 1.2em !important;
+  font-weight: 500 !important;
+  margin-bottom: 28px !important;
+  color: rgba(255,255,255,0.95) !important;
+}
+
+section.title p {
+  font-size: 1em !important;
+  color: rgba(255,255,255,0.95) !important;
+}
+
+section h1 {
+  color: var(--md-primary) !important;
+  font-size: 1.9em !important;
+  font-weight: 700 !important;
+  margin-bottom: 24px !important;
+  padding-bottom: 12px !important;
+  border-bottom: 4px solid var(--md-primary) !important;
+  border-radius: 2px;
+}
+
+section h2 {
+  color: var(--md-primary-dark) !important;
+  font-size: 1.35em !important;
+  font-weight: 600 !important;
+  margin-bottom: 20px !important;
+  margin-top: 0 !important;
+}
+
+section h3 {
+  color: var(--md-on-surface) !important;
+  font-size: 1.15em !important;
+  font-weight: 600 !important;
+  margin: 18px 0 10px 0 !important;
+  padding-left: 14px !important;
+  border-left: 4px solid var(--md-accent) !important;
+}
+
+section p,
+section li {
+  margin-bottom: 10px !important;
+  color: var(--md-on-surface) !important;
+}
+
+section ul {
+  padding-left: 28px !important;
+  margin: 16px 0 !important;
+}
+
+section li {
+  margin-bottom: 12px !important;
+  line-height: 1.55 !important;
+}
+
+section strong {
+  color: var(--md-primary-dark) !important;
+  font-weight: 600 !important;
+}
+
+section table {
+  width: 100% !important;
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+  margin: 24px 0 !important;
+  border-radius: var(--md-radius) !important;
+  overflow: hidden !important;
+  box-shadow: var(--md-elevation-1) !important;
+  background: var(--md-surface) !important;
+}
+
+section th,
+section td {
+  padding: 16px 22px !important;
+  text-align: left !important;
+  border: 1px solid var(--md-divider) !important;
+}
+
+section th {
+  background: var(--md-primary) !important;
+  color: var(--md-on-primary) !important;
+  font-weight: 600 !important;
+  font-size: 0.98em !important;
+}
+
+section tr:nth-child(even) td {
+  background: rgba(25, 118, 210, 0.05) !important;
+}
+
+section pre {
+  background: #263238 !important;
+  color: #ECEFF1 !important;
+  padding: 22px !important;
+  border-radius: var(--md-radius) !important;
+  font-size: 0.88em !important;
+  line-height: 1.5 !important;
+  overflow-x: auto !important;
+  box-shadow: var(--md-elevation-2) !important;
+}
+
+section code {
+  font-family: 'Roboto Mono', 'Consolas', monospace !important;
+  background: rgba(0, 188, 212, 0.12) !important;
+  color: var(--md-accent-dark) !important;
+  padding: 3px 9px !important;
+  border-radius: 4px !important;
+  font-size: 0.92em !important;
+}
+
+section pre code {
+  background: transparent !important;
+  color: inherit !important;
+  padding: 0 !important;
+}
+
+section a {
+  color: var(--md-primary) !important;
+  font-weight: 500 !important;
+  text-decoration: none !important;
+}
+
+section a:hover {
+  text-decoration: underline !important;
+}
+
+section.footer {
+  background: linear-gradient(135deg, var(--md-primary-dark) 0%, var(--md-primary) 100%) !important;
+  color: var(--md-on-primary) !important;
+}
+
+section.footer h2,
+section.footer strong,
+section.footer li {
+  color: var(--md-on-primary) !important;
+}
+
+section.footer ul {
+  margin: 24px 0 !important;
+}
+
+section::after {
+  color: var(--md-on-surface-secondary) !important;
+  font-size: 0.85em !important;
+}
