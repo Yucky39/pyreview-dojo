@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useRef, useEffect, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useState, useRef, useEffect, Suspense, useCallback } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Link2,
   CheckCircle2,
@@ -18,6 +18,8 @@ import {
   User,
   Camera,
   Save,
+  Trash2,
+  AlertTriangle,
 } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import toast from 'react-hot-toast';
@@ -78,6 +80,7 @@ export default function SettingsPageWrapper() {
 }
 
 function SettingsPage() {
+  const router = useRouter();
   const { aiProvider, aiApiKey, setAIProvider, setAIApiKey } = useAppStore();
   const { profile, supabaseUser, refreshProfile } = useAuth();
   const searchParams = useSearchParams();
@@ -206,6 +209,32 @@ function SettingsPage() {
     milestone_alert: true,
     weekly_summary: true,
   });
+
+  // アカウント削除
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDeleteAccount = useCallback(async () => {
+    if (deleteConfirmText !== 'アカウントを削除') return;
+
+    setIsDeleting(true);
+    try {
+      const res = await fetch('/api/account/delete', { method: 'DELETE' });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error);
+      }
+      // ローカルストレージをクリア
+      localStorage.removeItem('pyreview-dojo-store');
+      toast.success('アカウントが削除されました');
+      router.push('/');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'アカウントの削除に失敗しました');
+    } finally {
+      setIsDeleting(false);
+    }
+  }, [deleteConfirmText, router]);
 
   const selectedProviderInfo = AI_PROVIDERS.find((p) => p.value === aiProvider)!;
 
@@ -786,6 +815,102 @@ function SettingsPage() {
               </button>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* アカウント削除 */}
+      <div className="bg-white rounded-2xl shadow-sm border border-red-200 overflow-hidden">
+        <div className="p-5 border-b border-red-100">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center">
+              <Trash2 size={20} className="text-red-600" />
+            </div>
+            <div>
+              <h2 className="font-bold text-red-800">アカウント削除</h2>
+              <p className="text-sm text-red-500">
+                アカウントと全データを完全に削除します
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-5 space-y-4">
+          {!showDeleteConfirm ? (
+            <div className="space-y-3">
+              <div className="bg-red-50 rounded-xl p-4 text-sm text-red-700">
+                <p>アカウントを削除すると、以下のデータがすべて削除されます：</p>
+                <ul className="mt-2 space-y-1 list-disc list-inside text-red-600">
+                  <li>プロフィール情報</li>
+                  <li>学習プラン・レッスン・演習データ</li>
+                  <li>進捗・提出履歴</li>
+                  <li>取得済みの認定証</li>
+                  <li>Notion・Google Calendar連携設定</li>
+                </ul>
+                <p className="mt-2 font-semibold">この操作は取り消せません。</p>
+              </div>
+              <Button
+                variant="outline"
+                onClick={() => setShowDeleteConfirm(true)}
+                className="!border-red-300 !text-red-600 hover:!bg-red-50"
+              >
+                <Trash2 size={16} />
+                アカウントを削除する
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="bg-red-50 rounded-xl p-4 flex items-start gap-3">
+                <AlertTriangle size={20} className="text-red-500 flex-shrink-0 mt-0.5" />
+                <div className="text-sm text-red-700">
+                  <p className="font-bold mb-1">本当にアカウントを削除しますか？</p>
+                  <p>
+                    確認のため、下のフィールドに「<span className="font-mono font-bold">アカウントを削除</span>」と入力してください。
+                  </p>
+                </div>
+              </div>
+
+              <input
+                type="text"
+                value={deleteConfirmText}
+                onChange={(e) => setDeleteConfirmText(e.target.value)}
+                placeholder="アカウントを削除"
+                className="w-full px-4 py-2.5 border border-red-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+              />
+
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowDeleteConfirm(false);
+                    setDeleteConfirmText('');
+                  }}
+                  className="flex-1"
+                >
+                  キャンセル
+                </Button>
+                <button
+                  onClick={handleDeleteAccount}
+                  disabled={deleteConfirmText !== 'アカウントを削除' || isDeleting}
+                  className={clsx(
+                    'flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all',
+                    deleteConfirmText === 'アカウントを削除'
+                      ? 'bg-red-600 text-white hover:bg-red-700'
+                      : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                  )}
+                >
+                  {isDeleting ? (
+                    <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                  ) : (
+                    <Trash2 size={16} />
+                  )}
+                  完全に削除する
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
