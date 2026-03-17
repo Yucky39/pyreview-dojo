@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import {
   ChevronLeft,
@@ -17,19 +17,63 @@ import {
   ChevronUp,
   Eye,
   EyeOff,
+  Loader2,
 } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { clsx } from 'clsx';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
-import { getLessonById } from '@/lib/lessons-data';
+import { getSupabaseBrowserClient } from '@/lib/supabase';
+import {
+  type LessonDetail,
+  type LessonCatalogRow,
+  type ExerciseCatalogRow,
+  rowToLessonDetail,
+  getLessonById,
+} from '@/lib/lessons-data';
 
 export default function LessonPage() {
   const params = useParams();
   const router = useRouter();
   const lessonId = typeof params.id === 'string' ? params.id : '';
 
-  const lesson = getLessonById(lessonId);
+  const [lesson, setLesson] = useState<LessonDetail | null>(null);
+  const [isLoadingLesson, setIsLoadingLesson] = useState(true);
+
+  useEffect(() => {
+    const fetchLesson = async () => {
+      try {
+        const supabase = getSupabaseBrowserClient();
+        const [{ data: lessonRow, error: lessonError }, { data: exerciseRows, error: exError }] =
+          await Promise.all([
+            supabase.from('lesson_catalog').select('*').eq('id', lessonId).single(),
+            supabase
+              .from('exercise_catalog')
+              .select('*')
+              .eq('lesson_id', lessonId)
+              .order('exercise_order', { ascending: true }),
+          ]);
+
+        if (lessonError || !lessonRow) {
+          // DBが未セットアップの場合はフォールバック
+          setLesson(getLessonById(lessonId));
+        } else {
+          setLesson(
+            rowToLessonDetail(
+              lessonRow as LessonCatalogRow,
+              (exerciseRows ?? []) as ExerciseCatalogRow[]
+            )
+          );
+        }
+      } catch {
+        setLesson(getLessonById(lessonId));
+      } finally {
+        setIsLoadingLesson(false);
+      }
+    };
+
+    if (lessonId) fetchLesson();
+  }, [lessonId]);
 
   const [activeTab, setActiveTab] = useState<'lesson' | 'exercise'>('lesson');
   const [activeExercise, setActiveExercise] = useState(0);
@@ -51,6 +95,15 @@ export default function LessonPage() {
   }>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
+
+  // ロード中
+  if (isLoadingLesson) {
+    return (
+      <div className="flex justify-center py-20">
+        <Loader2 size={32} className="text-indigo-400 animate-spin" />
+      </div>
+    );
+  }
 
   // レッスンが見つからない場合
   if (!lesson) {

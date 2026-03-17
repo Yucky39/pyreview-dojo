@@ -1092,7 +1092,7 @@ print(u.get_info())
   },
 };
 
-// ===== ユーティリティ関数 =====
+// ===== ユーティリティ関数（ハードコードデータ用・フォールバック） =====
 
 export function getLessonById(id: string): LessonDetail | null {
   return LESSON_DETAILS[id] ?? null;
@@ -1100,4 +1100,78 @@ export function getLessonById(id: string): LessonDetail | null {
 
 export function getLessonMeta(id: string): LessonMeta | null {
   return LESSONS.find((l) => l.id === id) ?? null;
+}
+
+// ===== DB取得用ユーティリティ =====
+// Supabase の lesson_catalog / exercise_catalog から取得し、LessonMeta / LessonDetail に変換する
+
+// DBのレコード型
+export interface LessonCatalogRow {
+  id: string;
+  title: string;
+  phase_number: number;
+  phase_title: string;
+  lesson_type: LessonType;
+  status: LessonStatus;
+  estimated_minutes: number;
+  difficulty: 1 | 2 | 3 | 4 | 5;
+  tags: string[];
+  description: string | null;
+  content: LessonContent & { introduction?: string; key_concepts?: Array<{title: string; explanation: string; example?: string}>; summary?: string };
+  sort_order: number;
+}
+
+export interface ExerciseCatalogRow {
+  id: string;
+  lesson_id: string;
+  exercise_order: number;
+  title: string;
+  exercise_type: 'coding' | 'review';
+  prompt: string;
+  starter_code: string | null;
+  hints: string[];
+  solution: string | null;
+  alternative_solutions: Array<{ title: string; code: string; description: string }> | null;
+}
+
+export function rowToLessonMeta(row: LessonCatalogRow): LessonMeta {
+  return {
+    id: row.id,
+    title: row.title,
+    phase: row.phase_number,
+    phase_title: row.phase_title,
+    type: row.lesson_type,
+    status: row.status,
+    estimated_minutes: row.estimated_minutes,
+    difficulty: row.difficulty,
+    tags: row.tags,
+  };
+}
+
+export function rowToLessonDetail(
+  row: LessonCatalogRow,
+  exercises: ExerciseCatalogRow[]
+): LessonDetail {
+  return {
+    ...rowToLessonMeta(row),
+    description: row.description ?? '',
+    content: {
+      introduction: row.content.introduction ?? '',
+      key_concepts: row.content.key_concepts ?? [],
+      glossary: row.content.glossary,
+      summary: row.content.summary ?? '',
+    },
+    exercises: exercises
+      .sort((a, b) => a.exercise_order - b.exercise_order)
+      .map((ex) => ({
+        id: ex.id,
+        title: ex.title,
+        type: ex.exercise_type,
+        prompt: ex.prompt,
+        starter_code: ex.starter_code ?? undefined,
+        hints: ex.hints,
+        solution: ex.solution ?? undefined,
+        alternative_solutions: ex.alternative_solutions ?? undefined,
+      })),
+  };
 }
