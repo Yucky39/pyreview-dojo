@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import {
   ChevronLeft,
@@ -12,19 +12,68 @@ import {
   MessageSquare,
   Code2,
   AlertCircle,
+  BookOpen,
+  ChevronDown,
+  ChevronUp,
+  Eye,
+  EyeOff,
+  Loader2,
 } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { clsx } from 'clsx';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
-import { getLessonById } from '@/lib/lessons-data';
+import { getSupabaseBrowserClient } from '@/lib/supabase';
+import {
+  type LessonDetail,
+  type LessonCatalogRow,
+  type ExerciseCatalogRow,
+  rowToLessonDetail,
+  getLessonById,
+} from '@/lib/lessons-data';
 
 export default function LessonPage() {
   const params = useParams();
   const router = useRouter();
   const lessonId = typeof params.id === 'string' ? params.id : '';
 
-  const lesson = getLessonById(lessonId);
+  const [lesson, setLesson] = useState<LessonDetail | null>(null);
+  const [isLoadingLesson, setIsLoadingLesson] = useState(true);
+
+  useEffect(() => {
+    const fetchLesson = async () => {
+      try {
+        const supabase = getSupabaseBrowserClient();
+        const [{ data: lessonRow, error: lessonError }, { data: exerciseRows, error: exError }] =
+          await Promise.all([
+            supabase.from('lesson_catalog').select('*').eq('id', lessonId).single(),
+            supabase
+              .from('exercise_catalog')
+              .select('*')
+              .eq('lesson_id', lessonId)
+              .order('exercise_order', { ascending: true }),
+          ]);
+
+        if (lessonError || !lessonRow) {
+          // DBが未セットアップの場合はフォールバック
+          setLesson(getLessonById(lessonId));
+        } else {
+          setLesson(
+            rowToLessonDetail(
+              lessonRow as LessonCatalogRow,
+              (exerciseRows ?? []) as ExerciseCatalogRow[]
+            )
+          );
+        }
+      } catch {
+        setLesson(getLessonById(lessonId));
+      } finally {
+        setIsLoadingLesson(false);
+      }
+    };
+
+    if (lessonId) fetchLesson();
+  }, [lessonId]);
 
   const [activeTab, setActiveTab] = useState<'lesson' | 'exercise'>('lesson');
   const [activeExercise, setActiveExercise] = useState(0);
@@ -34,6 +83,10 @@ export default function LessonPage() {
   const [reviewText, setReviewText] = useState('');
   const [showHint, setShowHint] = useState(false);
   const [hintIndex, setHintIndex] = useState(0);
+  const [showSolution, setShowSolution] = useState(false);
+  const [activeSolutionTab, setActiveSolutionTab] = useState<'main' | number>('main');
+  const [showGlossary, setShowGlossary] = useState(false);
+  const [expandedTerms, setExpandedTerms] = useState<Set<number>>(new Set());
   const [feedback, setFeedback] = useState<null | {
     overall_score: number;
     summary: string;
@@ -42,6 +95,15 @@ export default function LessonPage() {
   }>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
+
+  // ロード中
+  if (isLoadingLesson) {
+    return (
+      <div className="flex justify-center py-20">
+        <Loader2 size={32} className="text-indigo-400 animate-spin" />
+      </div>
+    );
+  }
 
   // レッスンが見つからない場合
   if (!lesson) {
@@ -147,6 +209,20 @@ export default function LessonPage() {
     setReviewText('');
     setShowHint(false);
     setHintIndex(0);
+    setShowSolution(false);
+    setActiveSolutionTab('main');
+  };
+
+  const toggleTerm = (index: number) => {
+    setExpandedTerms((prev) => {
+      const next = new Set(prev);
+      if (next.has(index)) {
+        next.delete(index);
+      } else {
+        next.add(index);
+      }
+      return next;
+    });
   };
 
   return (
@@ -210,6 +286,61 @@ export default function LessonPage() {
               )}
             </div>
           ))}
+
+          {/* 用語解説 */}
+          {lesson.content.glossary && lesson.content.glossary.length > 0 && (
+            <div className="border border-teal-200 rounded-xl overflow-hidden">
+              <button
+                onClick={() => setShowGlossary(!showGlossary)}
+                className="w-full flex items-center justify-between px-5 py-3.5 bg-teal-50 hover:bg-teal-100 transition-colors"
+              >
+                <span className="flex items-center gap-2 font-semibold text-teal-800 text-sm">
+                  <BookOpen size={16} />
+                  用語解説
+                  <span className="bg-teal-200 text-teal-700 text-xs px-2 py-0.5 rounded-full font-medium">
+                    {lesson.content.glossary.length}語
+                  </span>
+                </span>
+                {showGlossary ? (
+                  <ChevronUp size={16} className="text-teal-600" />
+                ) : (
+                  <ChevronDown size={16} className="text-teal-600" />
+                )}
+              </button>
+
+              {showGlossary && (
+                <div className="divide-y divide-teal-100">
+                  {lesson.content.glossary.map((item, i) => (
+                    <div key={i} className="bg-white">
+                      <button
+                        onClick={() => toggleTerm(i)}
+                        className="w-full flex items-center justify-between px-5 py-3 hover:bg-teal-50 transition-colors text-left"
+                      >
+                        <span className="font-semibold text-gray-800 text-sm">
+                          {item.term}
+                        </span>
+                        {expandedTerms.has(i) ? (
+                          <ChevronUp size={14} className="text-gray-400 shrink-0" />
+                        ) : (
+                          <ChevronDown size={14} className="text-gray-400 shrink-0" />
+                        )}
+                      </button>
+                      {expandedTerms.has(i) && (
+                        <div className="px-5 pb-4 space-y-2">
+                          <p className="text-sm text-gray-600">{item.definition}</p>
+                          {item.example && (
+                            <pre className="bg-gray-900 text-gray-100 p-3 rounded-lg text-xs overflow-x-auto">
+                              <code>{item.example}</code>
+                            </pre>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* まとめ */}
           <div className="bg-indigo-50 rounded-xl p-4">
@@ -371,6 +502,94 @@ export default function LessonPage() {
                   AIにレビューしてもらう
                 </Button>
               </div>
+            </div>
+          )}
+
+          {/* 別解を見る */}
+          {exercise && exercise.solution && (
+            <div className="border border-violet-200 rounded-xl overflow-hidden">
+              <button
+                onClick={() => setShowSolution(!showSolution)}
+                className="w-full flex items-center justify-between px-5 py-3.5 bg-violet-50 hover:bg-violet-100 transition-colors"
+              >
+                <span className="flex items-center gap-2 font-semibold text-violet-800 text-sm">
+                  {showSolution ? (
+                    <EyeOff size={15} />
+                  ) : (
+                    <Eye size={15} />
+                  )}
+                  別解・解答例
+                  {exercise.alternative_solutions && (
+                    <span className="bg-violet-200 text-violet-700 text-xs px-2 py-0.5 rounded-full font-medium">
+                      {exercise.alternative_solutions.length + 1}パターン
+                    </span>
+                  )}
+                </span>
+                {showSolution ? (
+                  <ChevronUp size={16} className="text-violet-600" />
+                ) : (
+                  <ChevronDown size={16} className="text-violet-600" />
+                )}
+              </button>
+
+              {showSolution && (
+                <div className="bg-white">
+                  {/* 解答タブ */}
+                  {exercise.alternative_solutions && exercise.alternative_solutions.length > 0 && (
+                    <div className="flex gap-1 px-4 pt-4 overflow-x-auto">
+                      <button
+                        onClick={() => setActiveSolutionTab('main')}
+                        className={clsx(
+                          'px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all',
+                          activeSolutionTab === 'main'
+                            ? 'bg-violet-600 text-white'
+                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        )}
+                      >
+                        模範解答
+                      </button>
+                      {exercise.alternative_solutions.map((alt, i) => (
+                        <button
+                          key={i}
+                          onClick={() => setActiveSolutionTab(i)}
+                          className={clsx(
+                            'px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all',
+                            activeSolutionTab === i
+                              ? 'bg-violet-600 text-white'
+                              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                          )}
+                        >
+                          {alt.title}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="p-4">
+                    {activeSolutionTab === 'main' ? (
+                      <>
+                        <p className="text-xs text-gray-500 mb-3">
+                          これは一つの解答例です。他の書き方も正解になります。
+                        </p>
+                        <pre className="bg-gray-900 text-gray-100 p-4 rounded-xl text-sm overflow-x-auto">
+                          <code>{exercise.solution}</code>
+                        </pre>
+                      </>
+                    ) : (
+                      exercise.alternative_solutions && typeof activeSolutionTab === 'number' && (
+                        <>
+                          <p className="text-xs text-gray-500 mb-3">
+                            {exercise.alternative_solutions[activeSolutionTab].description}
+                          </p>
+                          <pre className="bg-gray-900 text-gray-100 p-4 rounded-xl text-sm overflow-x-auto">
+                            <code>{exercise.alternative_solutions[activeSolutionTab].code}</code>
+                          </pre>
+                        </>
+                      )
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

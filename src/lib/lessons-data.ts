@@ -16,6 +16,12 @@ export interface LessonMeta {
   tags: string[];
 }
 
+export interface GlossaryTerm {
+  term: string;
+  definition: string;
+  example?: string;
+}
+
 export interface LessonExercise {
   id: string;
   title: string;
@@ -23,6 +29,12 @@ export interface LessonExercise {
   prompt: string;
   starter_code?: string;
   hints: string[];
+  solution?: string;
+  alternative_solutions?: Array<{
+    title: string;
+    code: string;
+    description: string;
+  }>;
 }
 
 export interface LessonContent {
@@ -32,6 +44,7 @@ export interface LessonContent {
     explanation: string;
     example?: string;
   }>;
+  glossary?: GlossaryTerm[];
   summary: string;
 }
 
@@ -228,6 +241,27 @@ print(result)`,
           'f文字列は f"テキスト{変数}テキスト" の形式で使います',
           '改行は \\n または print() を複数回呼ぶことで表現できます',
         ],
+        solution: `def introduce(name: str, age: int, language: str) -> str:
+    """自己紹介文を返す関数"""
+    return f"名前: {name}\\n年齢: {age}歳\\n好きな言語: {language}"
+
+
+result = introduce("田中太郎", 25, "Python")
+print(result)`,
+        alternative_solutions: [
+          {
+            title: '複数のprint()を使う方法',
+            code: `def introduce(name: str, age: int, language: str) -> None:
+    """自己紹介を表示する関数"""
+    print(f"名前: {name}")
+    print(f"年齢: {age}歳")
+    print(f"好きな言語: {language}")
+
+
+introduce("田中太郎", 25, "Python")`,
+            description: '戻り値を持たせず、直接 print() で出力する書き方。用途によってはこちらの方がシンプルです。',
+          },
+        ],
       },
     ],
   },
@@ -295,6 +329,23 @@ print(text.split(","))     # 分割: ['  Hello', ' World!  ']`,
       ],
       summary:
         'Pythonの型は柔軟ですが、型ヒントを活用して意図を明示しましょう。f文字列は可読性が高く、積極的に使うべきです。',
+      glossary: [
+        {
+          term: '動的型付け',
+          definition: '変数の型を事前に宣言せず、実行時に自動的に決定される言語の性質。Pythonは動的型付け言語です。',
+          example: 'x = 42  # int\nx = "hello"  # 同じ変数にstrを再代入できる',
+        },
+        {
+          term: '型ヒント（Type Hint）',
+          definition: 'Python 3.5以降で使える変数・引数・戻り値の型を明示する記法。実行時には無視されるが、IDEや静的解析ツールが活用します。',
+          example: 'def greet(name: str) -> str:\n    return f"Hello, {name}"',
+        },
+        {
+          term: 'f文字列（f-string）',
+          definition: 'Python 3.6以降で使える文字列フォーマット方法。文字列の前に f を付け、{} 内に式を書くと展開されます。',
+          example: 'name = "田中"\nprint(f"こんにちは、{name}さん！")  # こんにちは、田中さん！',
+        },
+      ],
     },
     exercises: [
       {
@@ -318,6 +369,33 @@ process_numbers(["1", "2", "3", "4", "5"])
         hints: [
           'リスト内包表記 [int(x) for x in str_nums] を使いましょう',
           'sum() と len() で合計と平均が計算できます',
+        ],
+        solution: `from typing import List
+
+def process_numbers(str_nums: List[str]) -> None:
+    """文字列の数値リストを処理して統計を表示する"""
+    nums = [int(x) for x in str_nums]
+    total = sum(nums)
+    average = total / len(nums)
+    print(f"合計: {total}")
+    print(f"平均: {average}")
+
+
+process_numbers(["1", "2", "3", "4", "5"])`,
+        alternative_solutions: [
+          {
+            title: 'map() を使う方法',
+            code: `from typing import List
+
+def process_numbers(str_nums: List[str]) -> None:
+    nums = list(map(int, str_nums))
+    print(f"合計: {sum(nums)}")
+    print(f"平均: {sum(nums) / len(nums)}")
+
+
+process_numbers(["1", "2", "3", "4", "5"])`,
+            description: 'リスト内包表記の代わりに map() を使う方法。関数型プログラミングのスタイルです。',
+          },
         ],
       },
     ],
@@ -398,6 +476,23 @@ while count < 10:
       ],
       summary:
         'for文はイテラブルを直接扱い、enumerate/zipで柔軟なループを実現できます。ループのelse節はPython独自の強力な機能です。',
+      glossary: [
+        {
+          term: 'イテラブル（Iterable）',
+          definition: 'for文でループできるオブジェクト。list, tuple, str, dict, set, range などが該当します。',
+          example: 'for x in [1, 2, 3]:  # listはイテラブル\n    print(x)',
+        },
+        {
+          term: 'enumerate()',
+          definition: 'イテラブルの要素にインデックスを付けて返す組み込み関数。(index, value) のタプルを生成します。',
+          example: 'for i, v in enumerate(["a", "b", "c"]):\n    print(i, v)  # 0 a, 1 b, 2 c',
+        },
+        {
+          term: 'Walrus演算子（:=）',
+          definition: 'Python 3.8以降で使える「代入式」演算子。条件式の中で変数に値を代入しながら評価できます。',
+          example: 'if n := len(data):\n    print(f"データが{n}件あります")',
+        },
+      ],
     },
     exercises: [
       {
@@ -419,6 +514,57 @@ print("\\n".join(result))`,
         hints: [
           'まずforループで実装し、その後リスト内包表記に変換してみましょう',
           '条件の判定順序に注意: FizzBuzzを先に判定する必要があります',
+        ],
+        solution: `from typing import List
+
+def fizzbuzz(n: int) -> List[str]:
+    """1からnまでのFizzBuzz結果をリストで返す"""
+    return [
+        "FizzBuzz" if i % 15 == 0
+        else "Fizz" if i % 3 == 0
+        else "Buzz" if i % 5 == 0
+        else str(i)
+        for i in range(1, n + 1)
+    ]
+
+
+result = fizzbuzz(100)
+print("\\n".join(result))`,
+        alternative_solutions: [
+          {
+            title: 'forループを使う方法',
+            code: `from typing import List
+
+def fizzbuzz(n: int) -> List[str]:
+    result = []
+    for i in range(1, n + 1):
+        if i % 15 == 0:
+            result.append("FizzBuzz")
+        elif i % 3 == 0:
+            result.append("Fizz")
+        elif i % 5 == 0:
+            result.append("Buzz")
+        else:
+            result.append(str(i))
+    return result`,
+            description: '古典的なforループによる実装。読みやすさを重視する場合はこちらも良い選択肢です。',
+          },
+          {
+            title: '文字列結合を使う方法',
+            code: `from typing import List
+
+def fizzbuzz(n: int) -> List[str]:
+    result = []
+    for i in range(1, n + 1):
+        s = ""
+        if i % 3 == 0:
+            s += "Fizz"
+        if i % 5 == 0:
+            s += "Buzz"
+        result.append(s or str(i))
+    return result`,
+            description: '文字列を積み上げる方法。FizzBuzzの判定が自動的に処理されるため、条件の順番を気にしなくて済みます。',
+          },
         ],
       },
     ],
@@ -483,6 +629,28 @@ print(counter(5))   # 16`,
       ],
       summary:
         '関数の引数は柔軟に設定でき、*演算子でキーワード専用引数を強制できます。クロージャとnonlocalを使ってステートを管理できます。',
+      glossary: [
+        {
+          term: 'デフォルト引数',
+          definition: '関数定義で引数にデフォルト値を設定すること。呼び出し時に省略可能になります。',
+          example: 'def greet(name: str, greeting: str = "こんにちは") -> str:\n    return f"{greeting}、{name}"',
+        },
+        {
+          term: 'キーワード専用引数',
+          definition: '関数定義で * の後に書かれた引数。呼び出し時にキーワード引数として必ず指定する必要があります。',
+          example: 'def func(a, *, b):  # bはキーワード専用\n    pass\nfunc(1, b=2)  # OK\nfunc(1, 2)    # エラー',
+        },
+        {
+          term: 'クロージャ',
+          definition: '外側の関数のスコープにある変数を「閉じ込めた」内側の関数。外側の関数が返された後も変数の値を保持します。',
+          example: 'def make_adder(n):\n    def add(x):\n        return x + n  # n を閉じ込める\n    return add\nadd5 = make_adder(5)\nprint(add5(3))  # 8',
+        },
+        {
+          term: 'nonlocal',
+          definition: 'ネストされた関数から外側の関数の変数を変更するためのキーワード。global とは異なりモジュールレベルではなく直近の外側スコープを指します。',
+          example: 'def outer():\n    x = 0\n    def inner():\n        nonlocal x\n        x += 1\n    inner()\n    return x  # 1',
+        },
+      ],
     },
     exercises: [
       {
@@ -507,6 +675,45 @@ print(calculate_stats([]))
         hints: [
           '組み込み関数 sum(), min(), max(), len() を活用しましょう',
           '空リストの場合は min/max/average を None で返しましょう',
+        ],
+        solution: `from typing import List, Dict, Union
+
+def calculate_stats(numbers: List[float]) -> Dict[str, Union[int, float, None]]:
+    """数値リストの統計情報を返す"""
+    count = len(numbers)
+    if count == 0:
+        return {"count": 0, "sum": 0, "min": None, "max": None, "average": None}
+    total = sum(numbers)
+    return {
+        "count": count,
+        "sum": total,
+        "min": min(numbers),
+        "max": max(numbers),
+        "average": total / count,
+    }
+
+
+print(calculate_stats([1, 2, 3, 4, 5]))
+print(calculate_stats([]))`,
+        alternative_solutions: [
+          {
+            title: 'statistics モジュールを使う方法',
+            code: `from typing import List, Dict, Union
+import statistics
+
+def calculate_stats(numbers: List[float]) -> Dict[str, Union[int, float, None]]:
+    """数値リストの統計情報を返す（statisticsモジュール使用）"""
+    if not numbers:
+        return {"count": 0, "sum": 0, "min": None, "max": None, "average": None}
+    return {
+        "count": len(numbers),
+        "sum": sum(numbers),
+        "min": min(numbers),
+        "max": max(numbers),
+        "average": statistics.mean(numbers),
+    }`,
+            description: '標準ライブラリの statistics モジュールを使う方法。より厳密な統計計算が必要な場合に便利です。',
+          },
         ],
       },
     ],
@@ -581,6 +788,28 @@ only_python = python_devs - js_devs # 差集合: {'田中', '佐藤'}
       ],
       summary:
         '変更しないデータにはtuple、重複なし集合にはset、キーバリューにはdict。適切なコレクション型の選択がPythonicなコードの基本です。',
+      glossary: [
+        {
+          term: 'ミュータブル（Mutable）',
+          definition: '作成後に内容を変更できるオブジェクト。list, dict, set などが該当します。',
+          example: 'lst = [1, 2, 3]\nlst.append(4)  # 変更可能\nprint(lst)  # [1, 2, 3, 4]',
+        },
+        {
+          term: 'イミュータブル（Immutable）',
+          definition: '作成後に内容を変更できないオブジェクト。tuple, str, int, frozenset などが該当します。',
+          example: 't = (1, 2, 3)\n# t[0] = 99  # TypeError になる',
+        },
+        {
+          term: 'アンパック（Unpacking）',
+          definition: 'シーケンスやイテラブルの要素を複数の変数に一度に代入する操作。',
+          example: 'x, y = (10, 20)  # タプルのアンパック\na, *rest = [1, 2, 3, 4]  # 残りをリストに',
+        },
+        {
+          term: 'defaultdict',
+          definition: 'collections モジュールのdict派生クラス。存在しないキーへのアクセス時にデフォルト値を自動生成します。',
+          example: 'from collections import defaultdict\nd = defaultdict(int)\nd["x"] += 1  # KeyErrorにならない',
+        },
+      ],
     },
     exercises: [
       {
@@ -611,6 +840,38 @@ print(count_words(text, top_n=3))
           'text.lower().split() で単語のリストを取得できます',
           'collections.Counter を使うと簡単に実装できます',
           'Counter.most_common(n) で上位N件を取得できます',
+        ],
+        solution: `from typing import Optional
+from collections import Counter
+
+def count_words(
+    text: str,
+    top_n: Optional[int] = None
+) -> list[tuple[str, int]]:
+    """テキストの単語出現回数を集計する。"""
+    words = text.lower().split()
+    counter = Counter(words)
+    return counter.most_common(top_n)
+
+
+text = "the quick brown fox jumps over the lazy dog the fox"
+print(count_words(text, top_n=3))`,
+        alternative_solutions: [
+          {
+            title: 'dict を使って手動でカウントする方法',
+            code: `from typing import Optional
+
+def count_words(
+    text: str,
+    top_n: Optional[int] = None
+) -> list[tuple[str, int]]:
+    counts: dict[str, int] = {}
+    for word in text.lower().split():
+        counts[word] = counts.get(word, 0) + 1
+    sorted_items = sorted(counts.items(), key=lambda x: x[1], reverse=True)
+    return sorted_items[:top_n]`,
+            description: 'Counter を使わず dict で手動実装する方法。標準ライブラリへの依存なしに動作します。',
+          },
         ],
       },
     ],
@@ -691,6 +952,28 @@ for animal in animals:
       ],
       summary:
         'Pythonのクラスは強力で柔軟です。dataclassを使ってボイラープレートを削減し、型ヒントを活用して読みやすいコードを書きましょう。',
+      glossary: [
+        {
+          term: '__init__',
+          definition: 'クラスのコンストラクタメソッド。インスタンス生成時に自動的に呼び出されます。',
+          example: 'class Dog:\n    def __init__(self, name: str):\n        self.name = name',
+        },
+        {
+          term: 'self',
+          definition: 'インスタンスメソッドの第一引数。インスタンス自身を参照するための慣習的な名前です（Pythonの予約語ではありません）。',
+          example: 'class Counter:\n    def __init__(self):\n        self.count = 0\n    def increment(self):\n        self.count += 1',
+        },
+        {
+          term: '@dataclass',
+          definition: 'Python 3.7以降で使えるデコレータ。__init__, __repr__, __eq__ などを自動生成し、ボイラープレートコードを削減します。',
+          example: 'from dataclasses import dataclass\n@dataclass\nclass Point:\n    x: float\n    y: float\np = Point(1.0, 2.0)',
+        },
+        {
+          term: 'super()',
+          definition: '親クラスを参照する組み込み関数。主に子クラスから親クラスのメソッドを呼び出す際に使います。',
+          example: 'class Child(Parent):\n    def __init__(self, x, y):\n        super().__init__(x)  # 親のinit\n        self.y = y',
+        },
+      ],
     },
     exercises: [
       {
@@ -728,6 +1011,52 @@ print(account.transactions)`,
           'withdrawはbalanceが不足する場合ValueError("残高不足")を発生させる',
           'transactionsには{"type": "deposit", "amount": 金額}の形式で追加する',
         ],
+        solution: `from dataclasses import dataclass, field
+from typing import List
+
+@dataclass
+class BankAccount:
+    owner: str
+    balance: float = 0.0
+    transactions: List[dict] = field(default_factory=list)
+
+    def deposit(self, amount: float) -> None:
+        self.balance += amount
+        self.transactions.append({"type": "deposit", "amount": amount})
+
+    def withdraw(self, amount: float) -> None:
+        if amount > self.balance:
+            raise ValueError("残高不足")
+        self.balance -= amount
+        self.transactions.append({"type": "withdraw", "amount": amount})
+
+
+account = BankAccount("田中太郎")
+account.deposit(10000)
+account.withdraw(3000)
+print(account.balance)
+print(account.transactions)`,
+        alternative_solutions: [
+          {
+            title: 'dataclassを使わない実装',
+            code: `class BankAccount:
+    def __init__(self, owner: str, balance: float = 0.0):
+        self.owner = owner
+        self.balance = balance
+        self.transactions: list[dict] = []
+
+    def deposit(self, amount: float) -> None:
+        self.balance += amount
+        self.transactions.append({"type": "deposit", "amount": amount})
+
+    def withdraw(self, amount: float) -> None:
+        if amount > self.balance:
+            raise ValueError("残高不足")
+        self.balance -= amount
+        self.transactions.append({"type": "withdraw", "amount": amount})`,
+            description: '@dataclass を使わず __init__ を明示的に書く方法。シンプルで理解しやすいです。',
+          },
+        ],
       },
       {
         id: 'ex-l6-2',
@@ -763,7 +1092,7 @@ print(u.get_info())
   },
 };
 
-// ===== ユーティリティ関数 =====
+// ===== ユーティリティ関数（ハードコードデータ用・フォールバック） =====
 
 export function getLessonById(id: string): LessonDetail | null {
   return LESSON_DETAILS[id] ?? null;
@@ -771,4 +1100,78 @@ export function getLessonById(id: string): LessonDetail | null {
 
 export function getLessonMeta(id: string): LessonMeta | null {
   return LESSONS.find((l) => l.id === id) ?? null;
+}
+
+// ===== DB取得用ユーティリティ =====
+// Supabase の lesson_catalog / exercise_catalog から取得し、LessonMeta / LessonDetail に変換する
+
+// DBのレコード型
+export interface LessonCatalogRow {
+  id: string;
+  title: string;
+  phase_number: number;
+  phase_title: string;
+  lesson_type: LessonType;
+  status: LessonStatus;
+  estimated_minutes: number;
+  difficulty: 1 | 2 | 3 | 4 | 5;
+  tags: string[];
+  description: string | null;
+  content: LessonContent & { introduction?: string; key_concepts?: Array<{title: string; explanation: string; example?: string}>; summary?: string };
+  sort_order: number;
+}
+
+export interface ExerciseCatalogRow {
+  id: string;
+  lesson_id: string;
+  exercise_order: number;
+  title: string;
+  exercise_type: 'coding' | 'review';
+  prompt: string;
+  starter_code: string | null;
+  hints: string[];
+  solution: string | null;
+  alternative_solutions: Array<{ title: string; code: string; description: string }> | null;
+}
+
+export function rowToLessonMeta(row: LessonCatalogRow): LessonMeta {
+  return {
+    id: row.id,
+    title: row.title,
+    phase: row.phase_number,
+    phase_title: row.phase_title,
+    type: row.lesson_type,
+    status: row.status,
+    estimated_minutes: row.estimated_minutes,
+    difficulty: row.difficulty,
+    tags: row.tags,
+  };
+}
+
+export function rowToLessonDetail(
+  row: LessonCatalogRow,
+  exercises: ExerciseCatalogRow[]
+): LessonDetail {
+  return {
+    ...rowToLessonMeta(row),
+    description: row.description ?? '',
+    content: {
+      introduction: row.content.introduction ?? '',
+      key_concepts: row.content.key_concepts ?? [],
+      glossary: row.content.glossary,
+      summary: row.content.summary ?? '',
+    },
+    exercises: exercises
+      .sort((a, b) => a.exercise_order - b.exercise_order)
+      .map((ex) => ({
+        id: ex.id,
+        title: ex.title,
+        type: ex.exercise_type,
+        prompt: ex.prompt,
+        starter_code: ex.starter_code ?? undefined,
+        hints: ex.hints,
+        solution: ex.solution ?? undefined,
+        alternative_solutions: ex.alternative_solutions ?? undefined,
+      })),
+  };
 }
