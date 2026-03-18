@@ -27,7 +27,7 @@ const socialProviders: {
     textClass: 'text-gray-700',
   },
   {
-    id: 'twitter',
+    id: 'x' as Provider,
     name: 'X',
     icon: (
       <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">

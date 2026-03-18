@@ -443,7 +443,7 @@ function SettingsPage() {
               <Info size={14} className="text-gray-400" />
               <span>
                 {supabaseUser.app_metadata.provider === 'google' ? 'Google' :
-                 supabaseUser.app_metadata.provider === 'twitter' ? 'X (Twitter)' :
+                 supabaseUser.app_metadata.provider === 'twitter' || supabaseUser.app_metadata.provider === 'x' ? 'X (Twitter)' :
                  supabaseUser.app_metadata.provider} アカウントでログイン中
               </span>
             </div>

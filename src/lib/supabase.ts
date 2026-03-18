@@ -13,8 +13,17 @@ export function getSupabaseBrowserClient(): SupabaseClient {
   return browserClient;
 }
 
-// 後方互換用エクスポート
-export const supabase: SupabaseClient = createClient(supabaseUrl, supabaseAnonKey);
+// サーバーサイドAPI route用クライアント（遅延生成でブラウザ側での二重生成を防止）
+let serverClient: SupabaseClient | null = null;
+
+export const supabase: SupabaseClient = new Proxy({} as SupabaseClient, {
+  get(_target, prop) {
+    if (!serverClient) {
+      serverClient = createClient(supabaseUrl, supabaseAnonKey);
+    }
+    return (serverClient as unknown as Record<string, unknown>)[prop as string];
+  },
+});
 
 // サーバーサイド用（サービスロールキー使用）
 export function createServerSupabaseClient() {
