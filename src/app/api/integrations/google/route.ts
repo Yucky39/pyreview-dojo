@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { syncPlanToGoogleCalendar } from '@/lib/google';
+import { decrypt } from '@/lib/encryption';
 
 export async function POST(req: NextRequest) {
   try {
@@ -20,7 +21,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const tokens = JSON.parse(profile.google_token);
+    const tokens = JSON.parse(decrypt(profile.google_token));
     const accessToken = tokens.access_token;
 
     const { data: plan } = await supabase

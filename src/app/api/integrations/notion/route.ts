@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { syncMilestonesToNotion, createPlanOverviewPage, updateMilestoneInNotion } from '@/lib/notion';
 import { supabase } from '@/lib/supabase';
 import { getCurrentUser } from '@/lib/supabase-server';
+import { decrypt } from '@/lib/encryption';
 
 export async function POST(req: NextRequest) {
   try {
@@ -25,6 +26,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // 暗号化されたトークンを復号
+    const notionToken = decrypt(profile.notion_token);
+
     // 学習プランとマイルストーンを取得
     const { data: plan } = await supabase
       .from('learning_plans')
@@ -47,7 +51,7 @@ export async function POST(req: NextRequest) {
     for (const phase of plan.learning_phases) {
       if (phase.milestones && profile.notion_database_id) {
         await syncMilestonesToNotion(
-          profile.notion_token,
+          notionToken,
           profile.notion_database_id,
           phase.milestones,
           phase.phase_number

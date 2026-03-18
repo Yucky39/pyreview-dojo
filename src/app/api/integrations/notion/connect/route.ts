@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createNotionClient, createNotionLearningDatabase, createPlanOverviewPage } from '@/lib/notion';
 import { supabase } from '@/lib/supabase';
 import { getCurrentUser } from '@/lib/supabase-server';
+import { encrypt } from '@/lib/encryption';
 
 export async function POST(req: NextRequest) {
   try {
@@ -45,7 +46,7 @@ export async function POST(req: NextRequest) {
     await supabase
       .from('profiles')
       .update({
-        notion_token: token,
+        notion_token: encrypt(token),
         notion_database_id: databaseId,
       })
       .eq('id', userId);

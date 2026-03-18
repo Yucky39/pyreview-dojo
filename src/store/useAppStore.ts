@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage, type StateStorage } from 'zustand/middleware';
 import {
   User,
   LearningPlan,
@@ -9,6 +9,7 @@ import {
   SkillLevel,
 } from '@/types';
 import { AIProvider } from '@/lib/ai-provider';
+import { encryptClient, decryptClient, isEncryptedClient } from '@/lib/crypto-client';
 
 interface AppState {
   // 認証
@@ -86,6 +87,37 @@ export const useAppStore = create<AppState>()(
     }),
     {
       name: 'pyreview-dojo-store',
+      storage: createJSONStorage(() => {
+        // APIキーを暗号化して保存するカスタムストレージ
+        const storage: StateStorage = {
+          getItem: async (name: string) => {
+            const value = localStorage.getItem(name);
+            if (!value) return null;
+            try {
+              const parsed = JSON.parse(value);
+              if (parsed?.state?.aiApiKey && isEncryptedClient(parsed.state.aiApiKey)) {
+                parsed.state.aiApiKey = await decryptClient(parsed.state.aiApiKey);
+              }
+              return JSON.stringify(parsed);
+            } catch {
+              return value;
+            }
+          },
+          setItem: async (name: string, value: string) => {
+            try {
+              const parsed = JSON.parse(value);
+              if (parsed?.state?.aiApiKey && !isEncryptedClient(parsed.state.aiApiKey)) {
+                parsed.state.aiApiKey = await encryptClient(parsed.state.aiApiKey);
+              }
+              localStorage.setItem(name, JSON.stringify(parsed));
+            } catch {
+              localStorage.setItem(name, value);
+            }
+          },
+          removeItem: (name: string) => localStorage.removeItem(name),
+        };
+        return storage;
+      }),
       partialize: (state) => ({
         user: state.user,
         isAuthenticated: state.isAuthenticated,

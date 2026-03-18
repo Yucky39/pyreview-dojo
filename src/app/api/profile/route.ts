@@ -19,7 +19,14 @@ export async function GET() {
     return NextResponse.json({ error: 'プロフィールの取得に失敗しました' }, { status: 500 });
   }
 
-  return NextResponse.json(data);
+  // トークン類はクライアントに返さない（連携状態のみ返す）
+  const safeData = {
+    ...data,
+    notion_token: data.notion_token ? '***connected***' : null,
+    google_token: data.google_token ? '***connected***' : null,
+  };
+
+  return NextResponse.json(safeData);
 }
 
 // プロフィール更新

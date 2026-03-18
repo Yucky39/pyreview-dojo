@@ -3,6 +3,7 @@ import { google } from 'googleapis';
 import { supabase } from '@/lib/supabase';
 import { syncPlanToGoogleCalendar } from '@/lib/google';
 import { getCurrentUser } from '@/lib/supabase-server';
+import { encrypt } from '@/lib/encryption';
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -43,7 +44,7 @@ export async function GET(req: NextRequest) {
     await supabase
       .from('profiles')
       .update({
-        google_token: JSON.stringify(tokens),
+        google_token: encrypt(JSON.stringify(tokens)),
         google_calendar_id: 'primary',
       })
       .eq('id', userId);
