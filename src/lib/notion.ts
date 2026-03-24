@@ -164,7 +164,8 @@ export async function updateMilestoneInNotion(
 
   if (response.results.length > 0) {
     const pageId = response.results[0].id;
-    const updateProps: Record<string, unknown> = {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const updateProps: Record<string, any> = {
       ステータス: {
         select: { name: status },
       },
