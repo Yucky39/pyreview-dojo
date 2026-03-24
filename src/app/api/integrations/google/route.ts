@@ -1,12 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
-import { syncPlanToGoogleCalendar } from '@/lib/google';
+import {
+  syncPlanToGoogleCalendar,
+  deleteGoogleCalendarEvents,
+  createWeeklyStudyReminders,
+} from '@/lib/google';
 import { decrypt } from '@/lib/encryption';
 
 export async function POST(req: NextRequest) {
   try {
     const authHeader = req.headers.get('Authorization');
     const userId = authHeader?.replace('Bearer ', '') || 'demo-user';
+
+    const body = await req.json().catch(() => ({}));
+    const enableWeeklyReminders: boolean = body.enableWeeklyReminders ?? false;
 
     const { data: profile } = await supabase
       .from('profiles')
@@ -23,6 +30,7 @@ export async function POST(req: NextRequest) {
 
     const tokens = JSON.parse(decrypt(profile.google_token));
     const accessToken = tokens.access_token;
+    const calendarId = profile.google_calendar_id || 'primary';
 
     const { data: plan } = await supabase
       .from('learning_plans')
@@ -35,12 +43,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: '学習プランが見つかりません' }, { status: 404 });
     }
 
-    await syncPlanToGoogleCalendar(
-      accessToken,
-      profile.google_calendar_id || 'primary',
-      plan,
-      plan.learning_phases
-    );
+    // 既存イベントを削除してから再作成（upsert）
+    await deleteGoogleCalendarEvents(accessToken, calendarId, plan.id);
+    await syncPlanToGoogleCalendar(accessToken, calendarId, plan, plan.learning_phases);
+
+    if (enableWeeklyReminders && plan.start_date && plan.end_date) {
+      await createWeeklyStudyReminders(
+        accessToken,
+        calendarId,
+        plan.start_date,
+        plan.end_date,
+        plan.hours_per_week || 10,
+        plan.id
+      );
+    }
 
     return NextResponse.json({ success: true, message: 'Google Calendarに同期しました' });
   } catch (error) {

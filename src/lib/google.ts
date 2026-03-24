@@ -14,6 +14,41 @@ export function createGoogleAuthClient(accessToken: string) {
   return auth;
 }
 
+// ===== 既存イベントの一括削除（upsert前の掃除） =====
+
+export async function deleteGoogleCalendarEvents(
+  accessToken: string,
+  calendarId: string,
+  planId: string
+): Promise<void> {
+  const auth = createGoogleAuthClient(accessToken);
+  const calendar = google.calendar({ version: 'v3', auth });
+
+  let pageToken: string | undefined;
+  do {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const params: Record<string, any> = {
+      calendarId,
+      privateExtendedProperty: `planId=${planId}`,
+      maxResults: 250,
+    };
+    if (pageToken) params.pageToken = pageToken;
+
+    const res = await calendar.events.list(params);
+    const items = res.data.items || [];
+
+    await Promise.all(
+      items.map((item) =>
+        item.id
+          ? calendar.events.delete({ calendarId, eventId: item.id }).catch(() => {/* 削除失敗は無視 */})
+          : Promise.resolve()
+      )
+    );
+
+    pageToken = res.data.nextPageToken ?? undefined;
+  } while (pageToken);
+}
+
 // ===== カレンダーへのイベント追加 =====
 
 export async function syncPlanToGoogleCalendar(
@@ -25,6 +60,13 @@ export async function syncPlanToGoogleCalendar(
   const auth = createGoogleAuthClient(accessToken);
   const calendar = google.calendar({ version: 'v3', auth });
 
+  const extProps = {
+    private: {
+      source: 'pyreview-dojo',
+      planId: plan.id,
+    },
+  };
+
   // フェーズ開始イベント
   for (const phase of phases) {
     await calendar.events.insert({
@@ -35,6 +77,7 @@ export async function syncPlanToGoogleCalendar(
         start: { date: phase.start_date },
         end: { date: phase.start_date },
         colorId: '1', // ラベンダー
+        extendedProperties: extProps,
         reminders: {
           useDefault: false,
           overrides: [{ method: 'popup', minutes: 60 }],
@@ -52,6 +95,7 @@ export async function syncPlanToGoogleCalendar(
           start: { date: milestone.due_date },
           end: { date: milestone.due_date },
           colorId: '11', // 赤
+          extendedProperties: extProps,
           reminders: {
             useDefault: false,
             overrides: [
@@ -73,6 +117,7 @@ export async function syncPlanToGoogleCalendar(
       start: { date: plan.end_date },
       end: { date: plan.end_date },
       colorId: '10', // 緑
+      extendedProperties: extProps,
       reminders: {
         useDefault: false,
         overrides: [
@@ -104,6 +149,13 @@ export async function addMilestoneCompletedEvent(
       start: { date: dateStr },
       end: { date: dateStr },
       colorId: '10', // 緑
+      extendedProperties: {
+        private: {
+          source: 'pyreview-dojo',
+          type: 'milestone-completed',
+          milestoneId: milestone.id,
+        },
+      },
     },
   });
 }
@@ -130,7 +182,8 @@ export async function createWeeklyStudyReminders(
   calendarId: string,
   startDate: string,
   endDate: string,
-  hoursPerWeek: number
+  hoursPerWeek: number,
+  planId: string
 ): Promise<void> {
   const auth = createGoogleAuthClient(accessToken);
   const calendar = google.calendar({ version: 'v3', auth });
@@ -149,6 +202,13 @@ export async function createWeeklyStudyReminders(
         end: { date: dateStr },
         colorId: '5', // バナナ
         recurrence: [],
+        extendedProperties: {
+          private: {
+            source: 'pyreview-dojo',
+            planId,
+            type: 'weekly-reminder',
+          },
+        },
         reminders: {
           useDefault: false,
           overrides: [{ method: 'popup', minutes: 480 }], // 8時間前
