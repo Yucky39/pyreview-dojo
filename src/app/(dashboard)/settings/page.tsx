@@ -167,6 +167,9 @@ function SettingsPage() {
     notion: false,
     google: false,
   });
+  const [notionDatabaseId, setNotionDatabaseId] = useState('');
+  const [isSyncingNotion, setIsSyncingNotion] = useState(false);
+  const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null);
 
   // 連携ステータスをプロフィールAPIから取得
   useEffect(() => {
@@ -178,6 +181,9 @@ function SettingsPage() {
             notion: !!data.notion_token,
             google: !!data.google_token,
           });
+          if (data.notion_database_id) {
+            setNotionDatabaseId(data.notion_database_id);
+          }
         }
       })
       .catch(() => {/* 取得失敗時は未連携のまま */});
@@ -288,13 +294,33 @@ function SettingsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token: notionToken, page_id: notionPageId }),
       });
-      if (!res.ok) throw new Error();
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || '連携に失敗しました');
+      }
+      const data = await res.json();
       setIntegrations((prev) => ({ ...prev, notion: true }));
+      if (data.database_id) setNotionDatabaseId(data.database_id);
       toast.success('Notionと連携しました！学習プランが同期されます');
-    } catch {
-      toast.error('Notionとの連携に失敗しました。トークンとページIDを確認してください');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Notionとの連携に失敗しました。トークンとページIDを確認してください');
     } finally {
       setIsConnecting(null);
+    }
+  };
+
+  const handleSyncNotion = async () => {
+    setIsSyncingNotion(true);
+    try {
+      const res = await fetch('/api/integrations/notion', { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || '同期に失敗しました');
+      setLastSyncedAt(new Date().toISOString());
+      toast.success(data.message || 'Notionに同期しました');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Notionとの同期に失敗しました');
+    } finally {
+      setIsSyncingNotion(false);
     }
   };
 
@@ -672,16 +698,34 @@ function SettingsPage() {
                   <CheckCircle2 size={16} />
                   Notionと連携済み
                 </div>
-                <p>マイルストーンとタスクが自動同期されます</p>
+                <p>マイルストーン完了時に自動同期されます</p>
+                {notionDatabaseId && (
+                  <div className="mt-2 font-mono text-xs text-green-600 bg-green-100 rounded-lg px-3 py-1.5 flex items-center justify-between gap-2">
+                    <span className="truncate">DB: {notionDatabaseId}</span>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(notionDatabaseId);
+                        toast.success('データベースIDをコピーしました');
+                      }}
+                      className="shrink-0 text-green-500 hover:text-green-700"
+                      title="コピー"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                    </button>
+                  </div>
+                )}
+                {lastSyncedAt && (
+                  <p className="mt-1.5 text-xs text-green-500">
+                    最終同期: {new Date(lastSyncedAt).toLocaleString('ja-JP')}
+                  </p>
+                )}
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => {
-                    fetch('/api/integrations/notion', { method: 'POST' });
-                    toast.success('Notionに同期しています...');
-                  }}
+                  loading={isSyncingNotion}
+                  onClick={handleSyncNotion}
                 >
                   今すぐ同期
                 </Button>
