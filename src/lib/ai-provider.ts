@@ -141,6 +141,11 @@ export async function assessSkillLevel(
   answers: OnboardingAnswers,
   config: AIProviderConfig
 ): Promise<SkillLevel> {
+  // コードを一度も書いたことがない完全初学者は確定でLevel 0
+  if (answers.python_experience === 'zero' && !answers.has_programming_experience) {
+    return 0 as SkillLevel;
+  }
+
   const prompt = `
 あなたはPython学習の専門家です。以下のユーザー回答を分析し、0〜5のスキルレベルを判定してください。
 
@@ -155,7 +160,7 @@ export async function assessSkillLevel(
 ユーザー回答:
 - プログラミング経験: ${answers.has_programming_experience ? 'あり' : 'なし'}
 - 経験のある言語: ${answers.programming_languages.join(', ') || 'なし'}
-- Pythonの経験: ${answers.python_experience}
+- Pythonの経験: ${answers.python_experience === 'zero' ? 'コードを一度も書いたことがない（完全初学者）' : answers.python_experience}
 - 学習目標: ${answers.learning_goal}
 - 週の学習時間: ${answers.available_hours_per_week}時間
 

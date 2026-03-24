@@ -274,12 +274,16 @@ function Step2PythonLevel({
   answers: Partial<OnboardingAnswers>;
   onChange: (a: Partial<OnboardingAnswers>) => void;
 }) {
-  const options = [
-    { value: 'none', label: 'ほぼ触ったことがない', emoji: '🌱', desc: 'print("Hello")くらい' },
+  const baseOptions = [
+    { value: 'none', label: 'ほぼ触ったことがない', emoji: '🌱', desc: 'print("Hello")くらい書いたことがある' },
     { value: 'beginner', label: '少し書いたことがある', emoji: '🌿', desc: '簡単なスクリプトなら書ける' },
     { value: 'intermediate', label: 'ある程度使える', emoji: '🌳', desc: 'ライブラリを使った開発経験あり' },
     { value: 'advanced', label: 'かなり書ける', emoji: '🌲', desc: 'Pythonでの開発経験が豊富' },
   ];
+  const zeroOption = { value: 'zero', label: '一度も書いたことがない', emoji: '🆕', desc: 'コードを全く書いたことがない（完全初学者）' };
+  const options = answers.has_programming_experience
+    ? baseOptions
+    : [zeroOption, ...baseOptions];
 
   return (
     <div>

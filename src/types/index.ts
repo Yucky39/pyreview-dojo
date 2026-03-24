@@ -211,7 +211,7 @@ export type ProgrammingLanguage =
 export interface OnboardingAnswers {
   has_programming_experience: boolean;
   programming_languages: ProgrammingLanguage[];
-  python_experience: 'none' | 'beginner' | 'intermediate' | 'advanced';
+  python_experience: 'zero' | 'none' | 'beginner' | 'intermediate' | 'advanced';
   learning_goal: 'career' | 'personal' | 'work' | 'review_skill';
   available_hours_per_week: number;
   preferred_learning_style: 'visual' | 'hands_on' | 'reading' | 'mixed';
