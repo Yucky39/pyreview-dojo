@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { google } from 'googleapis';
 import { supabase } from '@/lib/supabase';
-import { syncPlanToGoogleCalendar } from '@/lib/google';
+import {
+  syncPlanToGoogleCalendar,
+  deleteGoogleCalendarEvents,
+  createWeeklyStudyReminders,
+} from '@/lib/google';
 import { getCurrentUser } from '@/lib/supabase-server';
 import { encrypt } from '@/lib/encryption';
 
@@ -58,12 +62,20 @@ export async function GET(req: NextRequest) {
       .single();
 
     if (plan && plan.learning_phases) {
-      await syncPlanToGoogleCalendar(
-        accessToken,
-        'primary',
-        plan,
-        plan.learning_phases
-      );
+      // 既存イベントを削除してから再作成（冪等化）
+      await deleteGoogleCalendarEvents(accessToken, 'primary', plan.id);
+      await syncPlanToGoogleCalendar(accessToken, 'primary', plan, plan.learning_phases);
+
+      if (plan.start_date && plan.end_date) {
+        await createWeeklyStudyReminders(
+          accessToken,
+          'primary',
+          plan.start_date,
+          plan.end_date,
+          plan.hours_per_week || 10,
+          plan.id
+        );
+      }
     }
 
     return NextResponse.redirect(

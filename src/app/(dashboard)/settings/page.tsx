@@ -171,6 +171,14 @@ function SettingsPage() {
   const [isSyncingNotion, setIsSyncingNotion] = useState(false);
   const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null);
 
+  // Google Calendar
+  const [isSyncingGoogle, setIsSyncingGoogle] = useState(false);
+  const [enableWeeklyReminders, setEnableWeeklyReminders] = useState(true);
+  const [googleCalendars, setGoogleCalendars] = useState<Array<{ id: string; summary: string }>>([]);
+  const [showCalendarSelector, setShowCalendarSelector] = useState(false);
+  const [selectedCalendarId, setSelectedCalendarId] = useState('primary');
+  const [isChangingCalendar, setIsChangingCalendar] = useState(false);
+
   // 連携ステータスをプロフィールAPIから取得
   useEffect(() => {
     fetch('/api/profile')
@@ -335,6 +343,53 @@ function SettingsPage() {
     } catch {
       toast.error('Google認証の開始に失敗しました');
       setIsConnecting(null);
+    }
+  };
+
+  const handleSyncGoogle = async () => {
+    setIsSyncingGoogle(true);
+    try {
+      const res = await fetch('/api/integrations/google', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enableWeeklyReminders }),
+      });
+      if (!res.ok) throw new Error();
+      toast.success('Google Calendarに同期しました');
+    } catch {
+      toast.error('Google Calendarとの同期に失敗しました');
+    } finally {
+      setIsSyncingGoogle(false);
+    }
+  };
+
+  const handleOpenCalendarSelector = async () => {
+    try {
+      const res = await fetch('/api/integrations/google/calendars');
+      const data = await res.json();
+      setGoogleCalendars(data.calendars || []);
+      setShowCalendarSelector(true);
+    } catch {
+      toast.error('カレンダー一覧の取得に失敗しました');
+    }
+  };
+
+  const handleChangeCalendar = async (calendarId: string) => {
+    setIsChangingCalendar(true);
+    try {
+      const res = await fetch('/api/integrations/google/calendar', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ calendarId }),
+      });
+      if (!res.ok) throw new Error();
+      setSelectedCalendarId(calendarId);
+      setShowCalendarSelector(false);
+      toast.success('カレンダーを変更しました');
+    } catch {
+      toast.error('カレンダーの変更に失敗しました');
+    } finally {
+      setIsChangingCalendar(false);
     }
   };
 
@@ -783,18 +838,68 @@ function SettingsPage() {
                   <CheckCircle2 size={16} />
                   Google Calendarと連携済み
                 </div>
-                <p>学習予定とマイルストーンが自動追加されます</p>
+                <p>マイルストーン完了時に自動でカレンダーへ記録されます</p>
               </div>
-              <div className="grid grid-cols-2 gap-2">
+
+              {/* 週次リマインダートグル */}
+              <div className="flex items-center justify-between py-2 px-3 bg-gray-50 rounded-xl">
+                <div className="flex items-center gap-2 text-sm text-gray-700">
+                  <Bell size={14} className="text-gray-400" />
+                  週次学習リマインダー（毎週月曜日）
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setEnableWeeklyReminders((v) => !v)}
+                  className={clsx(
+                    'relative w-10 h-5 rounded-full transition-colors',
+                    enableWeeklyReminders ? 'bg-blue-500' : 'bg-gray-300'
+                  )}
+                >
+                  <span
+                    className={clsx(
+                      'absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform',
+                      enableWeeklyReminders ? 'translate-x-5' : 'translate-x-0'
+                    )}
+                  />
+                </button>
+              </div>
+
+              {/* カレンダー選択 */}
+              {showCalendarSelector && googleCalendars.length > 0 && (
+                <div className="border border-gray-200 rounded-xl overflow-hidden">
+                  {googleCalendars.map((cal) => (
+                    <button
+                      key={cal.id}
+                      type="button"
+                      disabled={isChangingCalendar}
+                      onClick={() => handleChangeCalendar(cal.id)}
+                      className={clsx(
+                        'w-full text-left px-4 py-2.5 text-sm hover:bg-blue-50 transition-colors border-b border-gray-100 last:border-b-0',
+                        selectedCalendarId === cal.id && 'bg-blue-50 text-blue-700 font-medium'
+                      )}
+                    >
+                      {cal.summary}
+                      {selectedCalendarId === cal.id && ' ✓'}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              <div className="grid grid-cols-3 gap-2">
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => {
-                    fetch('/api/integrations/google', { method: 'POST' });
-                    toast.success('Google Calendarに同期しています...');
-                  }}
+                  loading={isSyncingGoogle}
+                  onClick={handleSyncGoogle}
                 >
                   今すぐ同期
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={showCalendarSelector ? () => setShowCalendarSelector(false) : handleOpenCalendarSelector}
+                >
+                  {showCalendarSelector ? '閉じる' : 'カレンダー変更'}
                 </Button>
                 <Button
                   variant="ghost"

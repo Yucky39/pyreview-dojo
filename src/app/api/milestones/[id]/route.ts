@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser, createSupabaseServerClient } from '@/lib/supabase-server';
 import { updateMilestoneInNotion } from '@/lib/notion';
+import { addMilestoneCompletedEvent } from '@/lib/google';
 import { decrypt } from '@/lib/encryption';
 
 export async function PATCH(
@@ -19,7 +20,7 @@ export async function PATCH(
     // マイルストーンの存在確認（RLSでユーザー所有確認）
     const { data: milestone, error: findError } = await supabase
       .from('milestones')
-      .select('id, title, status')
+      .select('id, title, status, phase_id, description, due_date')
       .eq('id', id)
       .single();
 
@@ -52,10 +53,10 @@ export async function PATCH(
       );
     }
 
-    // Notion連携チェック（設定済みの場合は自動同期）
+    // 連携チェック（設定済みの場合は自動同期）
     const { data: profile } = await supabase
       .from('profiles')
-      .select('notion_token, notion_database_id')
+      .select('notion_token, notion_database_id, google_token, google_calendar_id')
       .eq('id', user.id)
       .single();
 
@@ -77,11 +78,33 @@ export async function PATCH(
       }
     }
 
+    let googleSynced = false;
+    if (profile?.google_token && profile?.google_calendar_id) {
+      try {
+        const tokens = JSON.parse(decrypt(profile.google_token));
+        await addMilestoneCompletedEvent(
+          tokens.access_token,
+          profile.google_calendar_id,
+          milestone,
+          now
+        );
+        googleSynced = true;
+      } catch (googleError) {
+        // Google Calendar同期の失敗はメイン処理に影響させない
+        console.error('Google Calendar自動同期エラー:', googleError);
+      }
+    }
+
+    const syncedServices = [notionSynced && 'Notion', googleSynced && 'Google Calendar']
+      .filter(Boolean)
+      .join('・');
+
     return NextResponse.json({
       success: true,
       notion_synced: notionSynced,
-      message: notionSynced
-        ? 'マイルストーンを完了しました（Notionにも同期済み）'
+      google_synced: googleSynced,
+      message: syncedServices
+        ? `マイルストーンを完了しました（${syncedServices}にも同期済み）`
         : 'マイルストーンを完了しました',
     });
   } catch (error) {
