@@ -64,55 +64,94 @@ export async function createNotionLearningDatabase(
   return response.id;
 }
 
-// ===== マイルストーンをNotionに追加 =====
+// ===== マイルストーンをNotionにUpsert同期 =====
+// 既存ページがあれば更新、なければ新規作成する
 
 export async function syncMilestonesToNotion(
   token: string,
   databaseId: string,
   milestones: Milestone[],
-  phaseNumber: number
+  phaseNumber: number,
+  currentMilestoneId?: string // 「進行中」として扱うマイルストーンID
 ): Promise<void> {
   const notion = createNotionClient(token);
 
   for (const milestone of milestones) {
-    await notion.pages.create({
-      parent: { database_id: databaseId },
-      properties: {
-        タスク名: {
-          title: [{ type: 'text', text: { content: milestone.title } }],
-        },
-        ステータス: {
-          select: { name: milestone.status === 'completed' ? '完了' : '未着手' },
-        },
-        種別: {
-          select: { name: 'マイルストーン' },
-        },
-        フェーズ: {
-          select: { name: `フェーズ${phaseNumber}` },
-        },
-        期限: {
-          date: { start: milestone.due_date },
-        },
-        メモ: {
-          rich_text: [
-            {
-              type: 'text',
-              text: { content: milestone.description || '' },
-            },
-          ],
-        },
+    // Notionのステータスを決定
+    let notionStatus: string;
+    if (milestone.status === 'completed') {
+      notionStatus = '完了';
+    } else if (milestone.id === currentMilestoneId) {
+      notionStatus = '進行中';
+    } else {
+      notionStatus = '未着手';
+    }
+
+    // 完了日プロパティの設定
+    const completedDateProp = milestone.completed_at
+      ? { 完了日: { date: { start: milestone.completed_at.split('T')[0] } } }
+      : {};
+
+    const properties = {
+      タスク名: {
+        title: [{ type: 'text' as const, text: { content: milestone.title } }],
+      },
+      ステータス: {
+        select: { name: notionStatus },
+      },
+      種別: {
+        select: { name: 'マイルストーン' },
+      },
+      フェーズ: {
+        select: { name: `フェーズ${phaseNumber}` },
+      },
+      期限: {
+        date: { start: milestone.due_date },
+      },
+      メモ: {
+        rich_text: [
+          {
+            type: 'text' as const,
+            text: { content: milestone.description || '' },
+          },
+        ],
+      },
+      ...completedDateProp,
+    };
+
+    // 既存ページを検索（タイトルで一致するものを探す）
+    const existing = await notion.databases.query({
+      database_id: databaseId,
+      filter: {
+        property: 'タスク名',
+        title: { equals: milestone.title },
       },
     });
+
+    if (existing.results.length > 0) {
+      // 既存ページを更新
+      await notion.pages.update({
+        page_id: existing.results[0].id,
+        properties,
+      });
+    } else {
+      // 新規ページを作成
+      await notion.pages.create({
+        parent: { database_id: databaseId },
+        properties,
+      });
+    }
   }
 }
 
-// ===== マイルストーン完了をNotionに同期 =====
+// ===== マイルストーンのステータスをNotionに同期 =====
 
 export async function updateMilestoneInNotion(
   token: string,
   databaseId: string,
   milestoneTitle: string,
-  completedAt: string
+  completedAt: string,
+  status: '完了' | '進行中' | '未着手' = '完了'
 ): Promise<void> {
   const notion = createNotionClient(token);
 
@@ -127,16 +166,22 @@ export async function updateMilestoneInNotion(
 
   if (response.results.length > 0) {
     const pageId = response.results[0].id;
+    const updateProps: Record<string, unknown> = {
+      ステータス: {
+        select: { name: status },
+      },
+    };
+
+    // 完了時のみ完了日を設定
+    if (status === '完了') {
+      updateProps['完了日'] = {
+        date: { start: completedAt.split('T')[0] },
+      };
+    }
+
     await notion.pages.update({
       page_id: pageId,
-      properties: {
-        ステータス: {
-          select: { name: '完了' },
-        },
-        完了日: {
-          date: { start: completedAt.split('T')[0] },
-        },
-      },
+      properties: updateProps,
     });
   }
 }
