@@ -87,14 +87,11 @@ export async function syncMilestonesToNotion(
       notionStatus = '未着手';
     }
 
-    // 完了日プロパティの設定
-    const completedDateProp = milestone.completed_at
-      ? { 完了日: { date: { start: milestone.completed_at.split('T')[0] } } }
-      : {};
-
-    const properties = {
+    // プロパティオブジェクトを構築（型安全に条件付きプロパティを追加）
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const properties: Record<string, any> = {
       タスク名: {
-        title: [{ type: 'text' as const, text: { content: milestone.title } }],
+        title: [{ type: 'text', text: { content: milestone.title } }],
       },
       ステータス: {
         select: { name: notionStatus },
@@ -110,14 +107,15 @@ export async function syncMilestonesToNotion(
       },
       メモ: {
         rich_text: [
-          {
-            type: 'text' as const,
-            text: { content: milestone.description || '' },
-          },
+          { type: 'text', text: { content: milestone.description || '' } },
         ],
       },
-      ...completedDateProp,
     };
+
+    // 完了日は完了済みマイルストーンのみ設定
+    if (milestone.completed_at) {
+      properties['完了日'] = { date: { start: milestone.completed_at.split('T')[0] } };
+    }
 
     // 既存ページを検索（タイトルで一致するものを探す）
     const existing = await notion.databases.query({
