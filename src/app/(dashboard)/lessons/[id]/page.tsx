@@ -617,7 +617,7 @@ export default function LessonPage() {
                 {feedback.summary}
               </p>
 
-              <div className="grid grid-cols-2 gap-4 mb-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                 <div>
                   <h4 className="text-sm font-semibold text-green-700 mb-2 flex items-center gap-1.5">
                     <CheckCircle2 size={14} /> 良かった点
