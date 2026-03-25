@@ -99,15 +99,15 @@ export default function DashboardPage() {
     <div className="space-y-6">
       {/* ウェルカムヘッダー */}
       <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 rounded-3xl p-6 text-white shadow-xl">
-        <div className="flex items-start justify-between">
-          <div>
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
             <p className="text-indigo-200 text-sm font-medium">{greeting}！</p>
-            <h1 className="text-2xl font-black mt-1">今日も一緒に頑張りましょう 🐍</h1>
+            <h1 className="text-xl sm:text-2xl font-black mt-1">今日も一緒に頑張りましょう 🐍</h1>
             <p className="text-indigo-200 text-sm mt-2">
               連続学習 <span className="text-white font-bold">{stats.current_streak_days}日</span> 達成中！
             </p>
           </div>
-          <div className="text-right">
+          <div className="text-right flex-shrink-0">
             <LevelBadge level={stats.current_level} size="lg" showLabel={false} />
           </div>
         </div>
@@ -116,7 +116,7 @@ export default function DashboardPage() {
           <LevelProgress currentLevel={stats.current_level} />
         </div>
 
-        <div className="mt-4 flex gap-3">
+        <div className="mt-4 flex flex-wrap gap-3">
           <Link href="/lessons">
             <Button variant="secondary" size="sm" className="bg-white/20 hover:bg-white/30 border-0 text-white">
               <BookOpen size={16} />
